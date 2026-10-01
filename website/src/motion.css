@@ -1,0 +1,141 @@
+/* Shared motion: transforms and opacity animate without moving the layout. */
+:root { --motion-ease: cubic-bezier(.22, .72, .18, 1); }
+body, .page-content { overflow-x: clip; }
+.reading-progress { position: fixed; inset: 0 0 auto; height: 3px; pointer-events: none; z-index: 100; }
+.reading-progress span { display: block; height: 100%; background: linear-gradient(90deg, #e85d26, #df83c7, #283c82); transform: scaleX(var(--page-progress, 0)); transform-origin: left; }
+.page-content { animation: page-enter .45s var(--motion-ease) both; }
+
+/* Each heading, image, card and form section enters separately on scroll. */
+.motion-ready .reveal {
+  --reveal-y: 26px; --reveal-x: 0px;
+  opacity: 0; translate: var(--reveal-x) calc(var(--reveal-y) + var(--card-lift, 0px));
+  transition: opacity .65s ease, translate .75s var(--motion-ease), transform .3s var(--motion-ease), box-shadow .3s ease, border-color .2s ease, background-color .2s ease;
+  transition-delay: var(--reveal-delay, 0ms), var(--reveal-delay, 0ms), 0ms, 0ms, 0ms, 0ms;
+}
+.motion-ready .reveal[data-reveal-direction="left"] { --reveal-x: -22px; --reveal-y: 0px; }
+.motion-ready .reveal.in-view, .motion-ready .reveal:focus-within { --reveal-x: 0px; --reveal-y: 0px; opacity: 1; }
+.motion-ready .reveal:focus-within { transition-delay: 0ms; }
+
+/* Ambient effects run only while their section is visible. */
+.home-hero { position: relative; isolation: isolate; overflow: hidden; background-image: linear-gradient(95deg, #e288b5ae, #a497c2a8 52%, #3f5a92a8); }
+.home-hero::before { content: ''; position: absolute; inset: -1%; z-index: -2; background: url('/assets/home-hero.webp') center / cover; animation: hero-drift 22s ease-in-out infinite alternate; animation-play-state: paused; }
+.home-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(95deg, #e288b5ae, #a497c2a8 52%, #3f5a92a8); pointer-events: none; }
+.home-hero.ambient-active::before { animation-play-state: running; }
+.hero-content { position: relative; z-index: 1; }
+.hero-content h1 { animation: title-enter .85s var(--motion-ease) both; }
+.hero-content > p { animation: title-enter .85s .13s var(--motion-ease) both; }
+.hero-actions { animation: title-enter .85s .26s var(--motion-ease) both; }
+.page-banner, .journey, .partners { position: relative; isolation: isolate; overflow: hidden; background-size: 180% 180%; animation: gradient-shift 16s ease-in-out infinite alternate; animation-play-state: paused; }
+.page-banner.ambient-active, .journey.ambient-active, .partners.ambient-active { animation-play-state: running; }
+.page-banner::before, .page-banner::after, .journey::before, .journey::after { content: ''; position: absolute; border-radius: 50%; pointer-events: none; z-index: -1; animation: ambient-float 19s ease-in-out infinite alternate; animation-play-state: paused; }
+.page-banner::before { width: 220px; height: 220px; left: -80px; bottom: -130px; background: #ffffff35; }
+.page-banner::after { width: 130px; height: 130px; right: 6%; top: -80px; background: #ffffff29; animation-delay: -8s; }
+.journey { background-image: linear-gradient(110deg, #dfe2ec, #edf0f8 48%, #e6e1ef); }
+.journey::before { width: 230px; height: 230px; left: -90px; top: -140px; background: #b9c4e733; }
+.journey::after { width: 180px; height: 180px; right: -65px; bottom: -130px; background: #e0afda40; animation-delay: -9s; }
+.page-banner.ambient-active::before, .page-banner.ambient-active::after, .journey.ambient-active::before, .journey.ambient-active::after { animation-play-state: running; }
+.page-banner h1 { animation: title-enter .7s var(--motion-ease) both; }
+.page-banner p { animation: title-enter .7s .12s var(--motion-ease) both; }
+.team-illustration { width: min(100%, 410px); justify-self: center; }
+.team-graduation-cap { width: 100%; animation: cap-float 8s ease-in-out infinite; animation-play-state: paused; }
+.team-illustration.ambient-active .team-graduation-cap { animation-play-state: running; }
+.section-heading.in-view .heading-line { animation: line-grow .7s .18s var(--motion-ease) both; transform-origin: center; }
+
+/* The four original school photos keep the existing two-by-two layout. */
+.welcome-photo { position: relative; min-width: 0; overflow: hidden; border-radius: 16px; background: #f1f4f8; }
+.welcome-photos img { object-fit: cover; border-radius: 0; transition: transform .7s var(--motion-ease), filter .5s ease; }
+.welcome-photo, .feature-card, .program-card, .school-program-card, .value-card, .staff-card, .blog-card, .event-card, .contact-info-card, .faq-list article, .activity-tile, .testimonial-grid blockquote, .gallery-item {
+  --card-lift: 0px; translate: 0 var(--card-lift); transition: translate .3s var(--motion-ease), transform .3s var(--motion-ease), box-shadow .3s ease, background-color .25s ease, border-color .25s ease;
+}
+.feature-card, .program-card, .school-program-card, .value-card, .staff-card { position: relative; isolation: isolate; }
+.feature-card::after, .program-card::after, .school-program-card::after, .value-card::after, .staff-card::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background: radial-gradient(circle at var(--spot-x, 50%) var(--spot-y, 50%), #ffffff55, transparent 65%); transition: opacity .3s ease; }
+.feature-icon, .program-card-icon, .step-icon, .info-icon, .event-date, .activity-tile svg, .program-emoji { transition: transform .4s var(--motion-ease), background-color .25s ease; }
+.program-emoji { display: inline-block; }
+.staff-photo { transition: transform .55s var(--motion-ease), box-shadow .4s ease; }
+.blog-image img, .gallery-item img, .about-intro img, .contact-school, .quote-row > img { transition: transform .7s var(--motion-ease), filter .4s ease; }
+.team-panel:not([hidden]), .gallery-grid { animation: panel-enter .45s var(--motion-ease) both; }
+.gallery-item span { transition: translate .35s var(--motion-ease), background-color .25s ease; }
+.about-intro > img, .contact-school { transform-origin: center; }
+
+/* Buttons, menus, forms and dialogs get their own interaction feedback. */
+.button, .map-button, button:not(.gallery-item):not(.menu-toggle):not(.modal-close) { position: relative; overflow: hidden; isolation: isolate; }
+.motion-ripple { position: absolute; left: var(--ripple-x); top: var(--ripple-y); width: var(--ripple-size); height: var(--ripple-size); border-radius: 50%; background: #ffffff66; pointer-events: none; z-index: 3; animation: ripple-spread .65s ease-out both; }
+.hero-primary .motion-ripple, .gallery-filters .motion-ripple { background: #283c8233; }
+.button::after, .application-submit::after, .send-button::after { content: ''; position: absolute; inset: -40% auto -40% -70%; width: 45%; background: linear-gradient(90deg, transparent, #ffffff2f, transparent); rotate: 20deg; translate: 0; pointer-events: none; transition: translate .6s ease; }
+.button:active, .application-submit:active, .send-button:active { scale: .98; }
+.nav-links a { transition: color .2s ease, translate .25s var(--motion-ease); }
+.brand img { transition: rotate .4s var(--motion-ease), scale .4s var(--motion-ease); }
+.nav-links.open { animation: menu-drop .35s var(--motion-ease) both; }
+.nav-links.open a { animation: menu-link-enter .4s var(--menu-delay, 0ms) var(--motion-ease) both; }
+.nav-links a:nth-child(2) { --menu-delay: 25ms; }.nav-links a:nth-child(3) { --menu-delay: 50ms; }.nav-links a:nth-child(4) { --menu-delay: 75ms; }.nav-links a:nth-child(5) { --menu-delay: 100ms; }.nav-links a:nth-child(6) { --menu-delay: 125ms; }.nav-links a:nth-child(7) { --menu-delay: 150ms; }.nav-links a:nth-child(8) { --menu-delay: 175ms; }.nav-links a:nth-child(9) { --menu-delay: 200ms; }
+.team-tabs button, .gallery-filters button { transition: translate .25s var(--motion-ease), color .25s ease, background-color .25s ease, box-shadow .25s ease; }
+.team-tabs button[aria-selected="true"], .gallery-filters button.selected { box-shadow: 0 4px 12px #283c821b; }
+.contact-form-panel input, .contact-form-panel textarea, .application-field input, .application-field select { transition: border-color .2s ease, box-shadow .25s ease, background-color .2s ease; }
+.application-field:focus-within label, .contact-form-panel label:focus-within { color: var(--blue); }
+.application-field input:focus, .application-field select:focus { box-shadow: 0 0 0 4px #283c8214; }
+.application-field [aria-invalid="true"] { animation: field-nudge .32s ease; }
+.form-notice, .application-draft-notice, .application-error-summary { animation: notice-enter .35s var(--motion-ease) both; }
+.modal-backdrop { animation: backdrop-enter .22s ease both; backdrop-filter: blur(4px); }
+.lightbox, .article-dialog { animation: dialog-enter .4s var(--motion-ease) both; }
+.lightbox > img { animation: photo-enter .35s ease both; }
+.read-link svg, .text-link span, .map-button svg { transition: transform .3s var(--motion-ease); }
+.partner-line a { transition: translate .4s var(--motion-ease), rotate .4s var(--motion-ease), filter .4s ease; }
+:where(a, button, input, textarea, select):focus-visible { outline: 3px solid #e85d26; outline-offset: 3px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .welcome-photo:hover, .feature-card:hover, .program-card:hover, .school-program-card:hover, .value-card:hover, .staff-card:hover, .blog-card:hover { --card-lift: -7px; box-shadow: 0 16px 32px #202f611f; }
+  .has-tilt:hover { transform: perspective(1100px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); }
+  .feature-card:hover::after, .program-card:hover::after, .school-program-card:hover::after, .value-card:hover::after, .staff-card:hover::after { opacity: 1; }
+  .welcome-photo:hover img { transform: scale(1.065); filter: saturate(1.06); }
+  .staff-card:hover .staff-photo { transform: scale(1.045); box-shadow: 0 5px 18px #283c822b; }
+  .feature-card:hover .feature-icon, .school-program-card:hover .program-card-icon { transform: translateY(-3px) rotate(-7deg); }
+  .program-card:hover .program-emoji, .step-grid article:hover .step-icon { animation: icon-bounce .7s var(--motion-ease); }
+  .value-card:hover h2 svg, .activity-tile:hover svg { transform: rotate(-9deg) scale(1.1); }
+  .event-card:hover, .contact-info-card:hover, .faq-list article:hover, .activity-tile:hover, .testimonial-grid blockquote:hover { --card-lift: -4px; box-shadow: 0 10px 26px #202f611b; }
+  .event-card:hover .event-date, .contact-info-card:hover .info-icon { transform: rotate(-4deg) scale(1.03); }
+  .gallery-item:hover { --card-lift: -4px; box-shadow: 0 12px 26px #202f612b; }
+  .gallery-item:hover img, .blog-card:hover .blog-image img { transform: scale(1.065); }
+  .gallery-item:hover span { translate: 0 -3px; background: #fffaf4; }
+  .about-intro > img:hover, .contact-school:hover, .quote-row > img:hover { transform: scale(1.018); filter: saturate(1.05); }
+  .button:hover::after, .application-submit:hover::after, .send-button:hover::after { translate: 430% 0; }
+  .button:hover, .application-submit:hover, .send-button:hover { translate: 0 -2px; box-shadow: 0 8px 20px #101c342a; }
+  .team-tabs button:hover, .gallery-filters button:hover { translate: 0 -2px; }
+  .nav-links a:hover { translate: 0 -2px; }
+  .brand:hover img { rotate: -4deg; scale: 1.04; }
+  .topbar a:hover svg { animation: phone-ring .5s ease; }
+  .read-link:hover svg, .text-link:hover span, .map-button:hover svg { transform: translateX(4px); }
+  .partner-line a:hover { translate: 0 -6px; rotate: -3deg; transform: none; filter: drop-shadow(0 8px 12px #283c822b); }
+}
+
+@keyframes page-enter { from { opacity: .2; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes title-enter { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes hero-drift { from { transform: scale(1.02) translateX(-.4%); } to { transform: scale(1.1) translateX(.7%); } }
+@keyframes gradient-shift { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+@keyframes ambient-float { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(20px, -28px, 0); } }
+@keyframes cap-float { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-9px) rotate(1deg); } }
+@keyframes line-grow { from { transform: scaleX(.2); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+@keyframes panel-enter { from { opacity: .15; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes menu-drop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+@keyframes menu-link-enter { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+@keyframes icon-bounce { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px) rotate(-5deg); } 70% { transform: translateY(1px) rotate(2deg); } }
+@keyframes phone-ring { 20%, 60% { transform: rotate(-12deg); } 40%, 80% { transform: rotate(12deg); } 100% { transform: rotate(0); } }
+@keyframes ripple-spread { from { opacity: .7; transform: translate(-50%, -50%) scale(0); } to { opacity: 0; transform: translate(-50%, -50%) scale(1); } }
+@keyframes field-nudge { 20%, 60% { translate: -3px 0; } 40%, 80% { translate: 3px 0; } 100% { translate: 0; } }
+@keyframes notice-enter { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@keyframes backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialog-enter { from { opacity: 0; transform: translateY(16px) scale(.975); } to { opacity: 1; transform: none; } }
+@keyframes photo-enter { from { opacity: .3; } to { opacity: 1; } }
+
+.motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .page-content, .hero-content h1, .hero-content > p, .hero-actions, .page-banner h1, .page-banner p, .gallery-grid, .team-panel { opacity: 1; transform: none; }
+  .motion-ready .reveal { --reveal-x: 0px; --reveal-y: 0px; opacity: 1; translate: none; }
+  .has-tilt:hover, .welcome-photo:hover img, .gallery-item:hover img, .blog-card:hover .blog-image img, .staff-card:hover .staff-photo, .about-intro > img:hover, .contact-school:hover, .quote-row > img:hover { transform: none; }
+  .button:hover, .nav-links a:hover, .team-tabs button:hover, .gallery-filters button:hover, .partner-line a:hover { translate: none; rotate: none; }
+  .button::after, .application-submit::after, .send-button::after, .motion-ripple { display: none; }
+  .welcome-photo, .feature-card, .program-card, .school-program-card, .value-card, .staff-card, .blog-card, .event-card, .contact-info-card, .faq-list article, .activity-tile, .testimonial-grid blockquote, .gallery-item { --card-lift: 0px !important; translate: none !important; transform: none !important; }
+  .button:hover, .application-submit:hover, .send-button:hover, .read-link:hover svg, .text-link:hover span, .map-button:hover svg, .feature-icon, .program-card-icon, .step-icon, .info-icon, .event-date, .activity-tile svg { transform: none !important; translate: none !important; }
+  .brand:hover img, .button:active, .application-submit:active, .send-button:active { rotate: none; scale: 1; }
+}
