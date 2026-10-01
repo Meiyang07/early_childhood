@@ -4,6 +4,10 @@ export const projectRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url
 export const dataDirectory=path.resolve(projectRoot,process.env.ADMIN_DATA_DIR??'data');
 export const port=Number(process.env.ADMIN_PORT??4175);
 export const uiPort=Number(process.env.ADMIN_UI_PORT??5175);
+export const publicPort=Number(process.env.WEBSITE_PORT??4174);
+export const publicUiPort=Number(process.env.WEBSITE_UI_PORT??5174);
+if(!Number.isInteger(publicPort)||publicPort<1024||publicPort>65535||!Number.isInteger(publicUiPort)||publicUiPort<1024||publicUiPort>65535||publicPort===port)throw new Error('Set different valid website and admin ports.');
+export const publicOrigins=new Set([`http://localhost:${publicPort}`,`http://127.0.0.1:${publicPort}`,`http://localhost:${publicUiPort}`,`http://127.0.0.1:${publicUiPort}`]);
 if(!Number.isInteger(port)||port<1024||port>65535||!Number.isInteger(uiPort)||uiPort<1024||uiPort>65535)throw new Error('Set valid ADMIN_PORT and ADMIN_UI_PORT values between 1024 and 65535.');
 export const allowedOrigins=new Set([`http://localhost:${port}`,`http://127.0.0.1:${port}`,`http://localhost:${uiPort}`,`http://127.0.0.1:${uiPort}`]);
 export const sessionCookie='ecec_local_admin';

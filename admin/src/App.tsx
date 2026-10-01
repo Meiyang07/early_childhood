@@ -1,30 +1,118 @@
-import { useCallback,useEffect,useState,type FormEvent } from 'react';
-import { LockKeyhole,Eye,EyeOff,UserRound,ShieldCheck } from 'lucide-react';
-import { Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
+import {useCallback,useEffect,useState,type FormEvent} from 'react';
+import {Eye,EyeOff} from 'lucide-react';
+import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@/components/ui/dialog';
+import {Skeleton} from '@/components/ui/skeleton';
 import AdminPortal from './admin-portal';
-import { kinds,type PortalData,type Section } from './admin-model';
-import { navigate,usePath,Link } from './navigation';
+import {ForgotPasswordForm} from './AccountForms';
+import {adminKinds,type PortalData,type Section} from './admin-model';
+import {navigate,usePath,Link} from './navigation';
+
 type Account={username:string;name:string|null};
-type Session={authenticated:boolean;setupNeeded:boolean;account?:Account};
-async function sessionRequest(){const response=await fetch('/api/auth/session',{cache:'no-store'});if(!response.ok)throw new Error('The local server is unavailable. Restart the project and try again.');return response.json() as Promise<Session>;}
+type Session={authenticated:boolean;account?:Account};
+
+async function sessionRequest(){
+  const response=await fetch('/api/auth/session',{cache:'no-store'});
+  if(!response.ok)throw new Error('Unable to connect. Please try again.');
+  return response.json() as Promise<Session>;
+}
+
 export default function App(){
-  const path=usePath(),[session,setSession]=useState<Session|null>(null),[data,setData]=useState<PortalData|null>(null),[error,setError]=useState('');
-  const load=useCallback(async()=>{try{const result=await sessionRequest();setSession(result);setError('');if(result.authenticated){const response=await fetch('/api/admin',{cache:'no-store'});const payload=await response.json();if(!response.ok)throw new Error(payload.error??'Could not load school records.');setData(payload);}else setData(null);}catch(e){setError((e as Error).message);}},[]);
-  useEffect(()=>{void load();const expired=()=>{setSession({authenticated:false,setupNeeded:false});setData(null);};window.addEventListener('admin-session-expired',expired);return()=>window.removeEventListener('admin-session-expired',expired);},[load]);
+  const path=usePath();
+  const [session,setSession]=useState<Session|null>(null);
+  const [data,setData]=useState<PortalData|null>(null);
+  const [error,setError]=useState('');
+  const load=useCallback(async()=>{
+    try{
+      const result=await sessionRequest();
+      setSession(result);setError('');
+      if(result.authenticated){
+        const response=await fetch('/api/admin',{cache:'no-store'});
+        const payload=await response.json();
+        if(!response.ok)throw new Error(payload.error??'Could not load school records.');
+        setData(payload);
+      }else setData(null);
+    }catch(e){setError((e as Error).message);}
+  },[]);
+  useEffect(()=>{
+    void load();
+    const expired=()=>{setSession({authenticated:false});setData(null);};
+    window.addEventListener('admin-session-expired',expired);
+    return()=>window.removeEventListener('admin-session-expired',expired);
+  },[load]);
   async function signedIn(){await load();navigate('/admin');}
-  async function logout(){const response=await fetch('/api/auth/logout',{method:'POST'});if(!response.ok){setError('Could not log out. Please try again.');return;}setSession({authenticated:false,setupNeeded:false});setData(null);navigate('/');}
+  async function logout(){
+    const response=await fetch('/api/auth/logout',{method:'POST'});
+    if(!response.ok){setError('Could not log out. Please try again.');return;}
+    setSession({authenticated:false});setData(null);navigate('/');
+  }
   if(error)return <main className="unavailable"><img src="/assets/school-logo.jpg" width="90" height="90" alt="School logo"/><h1>Unable to open the admin panel</h1><p role="alert">{error}</p><button className="primary-button" onClick={load}>Try again</button></main>;
-  if(!session)return <main className="unavailable"><img src="/assets/school-logo.jpg" width="90" height="90" alt="School logo"/><p>Opening your local admin panel…</p><Skeleton className="h-3 w-48"/></main>;
+  if(!session)return <main className="unavailable"><img src="/assets/school-logo.jpg" width="90" height="90" alt="School logo"/><p>Loading…</p><Skeleton className="h-3 w-48"/></main>;
   if(!session.authenticated||path==='/'||path==='/login')return <LoginPage session={session} onSignedIn={signedIn}/>;
   const part=path.replace(/^\/admin\/?/,'')||'overview';
-  if(!path.startsWith('/admin')||!['overview','settings',...kinds].includes(part))return <main className="unavailable"><h1>Page not found</h1><Link className="primary-button" href="/admin">Open dashboard</Link></main>;
+  if(!path.startsWith('/admin')||!['overview','settings',...adminKinds].includes(part))return <main className="unavailable"><h1>Page not found</h1><Link className="primary-button" href="/admin">Open dashboard</Link></main>;
   if(!data)return <main className="unavailable"><p>Loading school records…</p></main>;
   return <AdminPortal section={part as Section} initial={data} account={session.account!} onLogout={logout}/>;
 }
+
 function LoginPage({session,onSignedIn}:{session:Session;onSignedIn:()=>Promise<void>}){
-  const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[visible,setVisible]=useState(false),[saving,setSaving]=useState(false),[error,setError]=useState(''),[help,setHelp]=useState(false);
-  const setup=session.setupNeeded;
-  async function submit(event:FormEvent){event.preventDefault();setError('');if(setup&&password!==confirm){setError('Passwords do not match.');return;}setSaving(true);try{const response=await fetch(`/api/auth/${setup?'setup':'login'}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});const result=await response.json();if(!response.ok)throw new Error(result.error??'Unable to sign in.');await onSignedIn();}catch(e){setError((e as Error).message);}finally{setSaving(false);}}
-  return <main className="login-page"><div className="login-orb peach" aria-hidden="true"/><div className="login-orb blue" aria-hidden="true"/><div className="login-orb lilac" aria-hidden="true"/><div className="login-orb mint" aria-hidden="true"/><div className="login-confetti" aria-hidden="true"><i/><i/><i/><i/><i/><i/></div><div className="login-layout"><section className="login-brand" aria-label="Early Childhood Montessori"><img src="/assets/school-logo.jpg" alt="Early Childhood Education Centre, Pokhara" width="390" height="390"/><h1>Early Childhood</h1><p>Montessori</p></section><div className="login-divider" aria-hidden="true"/><section className="login-card"><h2>ADMIN Portal</h2>{session.authenticated?<><p className="login-welcome">Signed in as {session.account?.username}.</p><Link className="login-button" href="/admin">Open admin panel</Link></>:<><p className="login-welcome">{setup?'Set up your local admin account.':'Welcome back. Sign in to your school workspace.'}</p><form onSubmit={submit}><div className="login-field"><label htmlFor="username">Username</label><input id="username" name="username" autoComplete="username" placeholder={setup?'Choose your username':'Enter your username'} value={username} onChange={event=>setUsername(event.target.value)} required minLength={3} maxLength={40} pattern="[a-zA-Z0-9_.-]+" title="Use letters, numbers, dots, underscores, or hyphens." autoFocus/></div><div className="login-field"><label htmlFor="password">Password</label><div className="password-input"><input id="password" name="password" autoComplete={setup?'new-password':'current-password'} type={visible?'text':'password'} placeholder={setup?'Choose a password (8+ characters)':'Enter your password'} value={password} onChange={event=>setPassword(event.target.value)} required minLength={8} maxLength={128}/><button type="button" aria-label={visible?'Hide password':'Show password'} onClick={()=>setVisible(v=>!v)}>{visible?<EyeOff size={19}/>:<Eye size={19}/>}</button></div></div>{setup&&<div className="login-field"><label htmlFor="confirm-password">Confirm password</label><input id="confirm-password" type={visible?'text':'password'} autoComplete="new-password" value={confirm} onChange={event=>setConfirm(event.target.value)} placeholder="Enter the same password" required minLength={8} maxLength={128}/></div>}{!setup&&<button className="forgot-password" type="button" onClick={()=>setHelp(true)}>Forgot Password?</button>}{error&&<p className="login-error" role="alert">{error}</p>}<button className="login-button" type="submit" disabled={saving}>{saving?'Please wait…':setup?'Create admin account':'Log in'}</button></form></>}<p className="login-security"><LockKeyhole size={16}/> Local account · saved on this computer</p></section></div><Dialog open={help} onOpenChange={setHelp}><DialogContent className="message-dialog"><DialogHeader><DialogTitle>Reset your admin password</DialogTitle><DialogDescription>Stop the local server, then open Terminal in this project’s folder.</DialogDescription></DialogHeader><p>Run <code>pnpm reset-password</code> and choose a new password. Then start the project again.</p><p className="secondary-text">This keeps your school records and photos. Full instructions are in README.md.</p></DialogContent></Dialog></main>;
+  const [username,setUsername]=useState('');
+  const [password,setPassword]=useState('');
+  const [visible,setVisible]=useState(false);
+  const [saving,setSaving]=useState(false);
+  const [error,setError]=useState('');
+  const [help,setHelp]=useState(false);
+  async function submit(event:FormEvent){
+    event.preventDefault();setError('');setSaving(true);
+    try{
+      const response=await fetch('/api/auth/login',{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password}),
+      });
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error??'Unable to sign in.');
+      await onSignedIn();
+    }catch(e){setError((e as Error).message);}finally{setSaving(false);}
+  }
+  return <main className="login-page">
+    <div className="login-orb peach" aria-hidden="true"/><div className="login-orb blue" aria-hidden="true"/>
+    <div className="login-orb lilac" aria-hidden="true"/><div className="login-orb mint" aria-hidden="true"/>
+    <div className="login-confetti" aria-hidden="true"><i/><i/><i/><i/><i/><i/></div>
+    <div className="login-layout">
+      <section className="login-brand" aria-label="Early Childhood Montessori">
+        <img src="/assets/school-logo.jpg" alt="Early Childhood Education Centre, Pokhara" width="390" height="390"/>
+        <h1>Early Childhood</h1><p>Montessori</p>
+      </section>
+      <div className="login-divider" aria-hidden="true"/>
+      <section className="login-card">
+        <h2>Admin Portal</h2>
+        {session.authenticated?<>
+          <p className="login-welcome">Signed in as {session.account?.username}.</p>
+          <Link className="login-button" href="/admin">Open admin panel</Link>
+        </>:<>
+          <p className="login-welcome">Log in.</p>
+          <form onSubmit={submit}>
+            <div className="login-field">
+              <label htmlFor="username">Username</label>
+              <input id="username" name="username" autoComplete="username" placeholder="Enter your username" value={username} onChange={event=>setUsername(event.target.value)} required minLength={1} maxLength={120} autoFocus/>
+            </div>
+            <div className="login-field">
+              <label htmlFor="password">Password</label>
+              <div className="password-input">
+                <input id="password" name="password" autoComplete="current-password" type={visible?'text':'password'} placeholder="Enter your password" value={password} onChange={event=>setPassword(event.target.value)} required minLength={8} maxLength={128}/>
+                <button type="button" aria-label={visible?'Hide password':'Show password'} onClick={()=>setVisible(v=>!v)}>{visible?<EyeOff size={19}/>:<Eye size={19}/>}</button>
+              </div>
+            </div>
+            <button className="forgot-password" type="button" onClick={()=>setHelp(true)}>Forgot Password?</button>
+            {error&&<p className="login-error" role="alert">{error}</p>}
+            <button className="login-button" type="submit" disabled={saving}>{saving?'Please wait…':'Log in'}</button>
+          </form>
+        </>}
+      </section>
+    </div>
+    <Dialog open={help} onOpenChange={setHelp}>
+      <DialogContent className="message-dialog">
+        <DialogHeader><DialogTitle>Reset your admin password</DialogTitle><DialogDescription>Enter the code sent to your recovery email.</DialogDescription></DialogHeader>
+        <ForgotPasswordForm initialUsername={username} onDone={()=>{setHelp(false);setError('');}}/>
+      </DialogContent>
+    </Dialog>
+  </main>;
 }

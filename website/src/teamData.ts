@@ -1,9 +1,11 @@
 export type TeamGroup = 'admins' | 'teachers' | 'operators';
 
 export interface TeamMember {
+  id?:string;
   name: string;
   role: string;
   image?: string;
+  bio?: string;
 }
 
 export const teamGroups: { id: TeamGroup; label: string }[] = [

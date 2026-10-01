@@ -1,5 +1,6 @@
-import { useState, type KeyboardEvent } from 'react';
-import { teamGroups, teamMembers, type TeamGroup, type TeamMember } from './teamData';
+import { useEffect,useState, type KeyboardEvent } from 'react';
+import { teamGroups, type TeamGroup, type TeamMember } from './teamData';
+import {useSchool} from './SchoolContext';
 
 function initialGroup(): TeamGroup {
   const group = new URLSearchParams(window.location.search).get('group');
@@ -8,17 +9,20 @@ function initialGroup(): TeamGroup {
 
 function StaffCard({ member }: { member: TeamMember }) {
   const [photoUnavailable, setPhotoUnavailable] = useState(false);
+  useEffect(()=>setPhotoUnavailable(false),[member.image]);
   const initials = member.name.split(/\s+/).slice(0, 2).map(part => part[0]).join('');
   return <article className="staff-card">
     {member.image && !photoUnavailable
-      ? <img className="staff-photo" src={`/assets/team/${member.image}`} alt={member.name} width={250} height={250} loading="lazy" onError={() => setPhotoUnavailable(true)} />
+      ? <img className="staff-photo" src={member.image} alt={member.name} width={250} height={250} loading="lazy" onError={() => setPhotoUnavailable(true)} />
       : <div className="staff-photo staff-initials" role="img" aria-label={`Photo unavailable for ${member.name}`}><span aria-hidden="true">{initials}</span></div>}
     <h3>{member.name}</h3>
-    <p>{member.role}</p>
+    <p>{member.role}</p>{member.bio&&<p className="staff-bio">{member.bio}</p>}
   </article>;
 }
 
 export default function TeamPage() {
+  const {records}=useSchool();
+  const teamMembers=Object.fromEntries(teamGroups.map(group=>[group.id,records.filter(r=>r.kind==='staff'&&r.data.group===group.label).map(r=>({id:r.id,name:r.name,role:r.data.role,image:r.data.imagePath,bio:r.data.bio}))])) as Record<TeamGroup,TeamMember[]>;
   const [activeGroup, setActiveGroup] = useState<TeamGroup>(initialGroup);
 
   function selectGroup(group: TeamGroup, focus = false) {
@@ -69,7 +73,7 @@ export default function TeamPage() {
       </div>
       {teamGroups.map(group => <div key={group.id} className="team-panel" role="tabpanel"
         id={`team-panel-${group.id}`} aria-labelledby={`team-tab-${group.id}`} hidden={activeGroup !== group.id} tabIndex={0}>
-        <div className="team-grid">{teamMembers[group.id].map(member => <StaffCard key={member.name} member={member} />)}</div>
+        <div className="team-grid">{teamMembers[group.id].map(member => <StaffCard key={member.id??member.name} member={member} />)}</div>
       </div>)}
     </div></section>
   </>;

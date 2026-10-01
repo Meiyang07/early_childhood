@@ -1,69 +1,61 @@
-# Early Childhood Admin — Local Project
+# Admin quick reference
 
-A standalone React + TypeScript admin panel based on your login and dashboard images. It runs on your own computer at **http://localhost:4175**, independently of the public Early Childhood website.
+Use the [complete user guide](../README.md) for setup, daily tasks, email, passwords, backups, and troubleshooting.
 
-## Run on your Mac
+## Start and sign in
 
-1. Install **Node.js 24 LTS** if needed (Node.js 22.13 or newer is required).
-2. Unzip this project and open Terminal in the `early-childhood-admin-local` folder.
-3. Run:
+From the main `early_childhood` folder:
 
 ```bash
-pnpm install
-pnpm local
-```
-
-If you do not have pnpm, these commands also work:
-
-```bash
-npm install
 npm run local
 ```
 
-Open **http://localhost:4175**. The first screen asks you to choose your own admin username and password. No default credentials are supplied. Later visits use that same local account.
+Admin: http://localhost:4175  
+Website: http://localhost:4174
 
-On macOS, `RUN_LOCAL.command` is also included. It installs missing dependencies, builds the project, starts the local server, and opens your browser. Terminal commands above are the most reliable option if macOS blocks downloaded command files.
+Keep Terminal open; Control+C stops the project.
 
-Keep Terminal open while using the panel. Press **Control+C** to stop it. Internet access is needed to install dependencies; after installation, the panel, fonts, photos, and database work locally.
+On a fresh installation, log in with **admin** / **EarlyChildhood@2026**. The account is assigned in `server/initial-admin.ts` and initialized once. There is no Create account page. Existing accounts and changed passwords are preserved.
 
-## Editing the project
+Set your own password using the guide's change-password or Terminal recovery instructions. Optional private `ADMIN_INITIAL_USERNAME` and `ADMIN_INITIAL_PASSWORD` values apply only before the first account is initialized.
 
-Stop the normal local server with Control+C before switching to development mode.
+## Admin sections
+
+| Section | Main actions |
+| --- | --- |
+| Quick Actions | Dashboard, counts, recent applications, and content shortcuts. |
+| Admissions | Review applications, add notes, and update decisions. |
+| Staff & Teachers | Manage Admins, Teachers, Operators, photos, and Active/Inactive status. |
+| Reviews | Approve, hide, or remove parent reviews. |
+| Programs | Manage descriptions, ages, fees, and Published/Draft status. |
+| Gallery | Add/replace photos and filter by category, status, or search. |
+| Events | Manage dates, locations, details, categories, and status. |
+| Blog | Manage articles, introductions, photos, categories, and status. |
+| Settings | School details, email queue counts, retries, and password changes. |
+
+The Messages page is removed. Reply to contact enquiries from the school inbox. Admission decision changes do not send automatic decision emails. Staff profiles do not create login accounts.
+
+Only Active staff, Published content, and Approved reviews appear publicly. Gallery, Events, and Blog support New category in the toolbar and editor. Photos accept JPEG, PNG, or WebP up to 8 MB.
+
+## Email and recovery
+
+Use `.env.example` to create `admin/.env` if it does not exist. Preserve an existing configuration when updating. Fill in SMTP values and `ADMIN_RECOVERY_EMAIL`, then restart from the main folder.
+
+School email in Settings receives notifications. Password codes go to the stored recovery address or the `.env` fallback. Existing stored recovery addresses take precedence.
+
+Settings → Change password requires the current password and an emailed code. Forgot Password resets with an emailed code. Both need working SMTP.
+
+For owner recovery without email, stop the server. From the main folder:
 
 ```bash
-pnpm dev
+cd admin
+npm run reset-password
 ```
 
-The React development UI opens at **http://localhost:5175** and uses the separate local API at port 4175. Saved records are the same as in normal local mode.
+Follow the prompts, then run `cd ..` and `npm run local`.
 
-For a manual build/start:
+## Preserve data
 
-```bash
-pnpm build
-pnpm start
-```
+Stop the server before copying the **whole `admin/data/` folder**, `.env`, and source assets. Preserve a custom `ADMIN_DATA_DIR` if configured. Keep private data and credentials out of GitHub.
 
-## Login and saved data
-
-- Create your admin account on the first run. Passwords use salted scrypt hashes; sessions use an HTTP-only cookie.
-- Change your password in **Settings → Change password**.
-- If you forget it, stop the server and run `pnpm reset-password` (or `npm run reset-password`) in the project folder. Enter your admin username and a new password. This keeps your school records and photos and logs out old sessions.
-- Your SQLite database is created in **`data/admin.sqlite`**. Uploaded photos are in **`data/uploads/`**.
-- To back up or move your records to another computer, stop the server and copy the **entire `data` folder**, then restore it inside the project before starting. Treat the backup as private: it includes school records and password hashes.
-- This ZIP starts with no account or personal database. Test credentials and test records are excluded.
-
-The server listens only on your own computer. This package is intended for local use; public hosting would require a separate deployment configuration.
-
-## Included views
-
-Dashboard, admissions, staff and teachers, reviews, messages, programs, gallery, events, blog, and settings. Add, edit, remove, search, filter, update statuses, upload photos, and save school details. Forms validate on both the screen and the server. Removal asks for confirmation; stale edits are rejected instead of overwriting newer data.
-
-The logo, staff portraits, and initial gallery photos use the supplied school assets. Initial admissions from the reference and illustrative messages/reviews are explicitly marked **Example**. Events and blog posts start empty. Deleting an example does not recreate it on the next visit.
-
-Working days default to **Monday–Friday**, with hours **9:00 AM–4:00 PM**. The interface includes animations, mobile layouts, keyboard-accessible controls, and reduced-motion support.
-
-This project has its own login and data. It does not depend on ChatGPT, Sites, Cloudflare, or the previous public website.
-
-## Optional settings
-
-Copy `.env.example` to `.env` to change ports or the data folder. Set `ADMIN_PORT` to change the normal local URL and `ADMIN_UI_PORT` to change the development URL. Restart the project after changing these settings.
+See [backup and update instructions](../README.md#backups-and-project-updates).

@@ -1,0 +1,12 @@
+.nepal-phone{display:flex;align-items:stretch;border:1px solid #d9dfeb;border-radius:9px;overflow:hidden;background:white}.nepal-phone>span{display:flex;align-items:center;padding:0 12px;background:#f0f3f8;font-size:14px;color:#354b6c;font-weight:600;border-right:1px solid #d9dfeb;flex-shrink:0}.nepal-phone input{border:0!important;border-radius:0!important;flex:1;min-width:0}.nepal-phone:focus-within{outline:2px solid #7189c8;outline-offset:2px}.message-dialog{max-height:90dvh;overflow-y:auto}.message-email{border-top:1px solid #eee5d5;padding-top:18px;display:flex;flex-direction:column;gap:14px}.email-deliveries{padding:15px;border-radius:10px;background:#f3f5f8;font-size:13px}.email-deliveries h3{font-weight:600;margin-bottom:8px}.email-deliveries p{margin:8px 0}.form-notice{font-size:14px;padding:12px;background:#fff1ca;border-radius:8px}.settings-aside .secondary-text{margin-top:12px;overflow-wrap:anywhere}.settings-connection button{margin:16px 0}.settings-connection p{margin-top:12px}.account-email{overflow-wrap:anywhere}input:read-only{background:#f3f4f6;cursor:default}.review-bottom .row-actions{flex-wrap:wrap}.review-author{overflow-wrap:anywhere}
+.school-landline{display:flex;align-items:center;min-height:42px;padding:8px 12px;border:1px solid #e0ddd5;border-radius:9px;background:#f3f4f6;color:#354b6c}
+.section-toolbar { flex-wrap: wrap; }
+.toolbar-actions { flex-wrap: wrap; }
+.toolbar-actions .choice { min-width: 150px; max-width: 240px; }
+.category-dialog form { display: grid; gap: 22px; }
+.category-field { display: grid; gap: 10px; min-width: 0; }
+.category-select { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.category-select .choice { flex: 1; min-width: 120px; }
+.category-select button { white-space: nowrap; }
+.inline-category { display: grid; gap: 9px; padding: 12px; border: 1px solid #dce1ec; border-radius: 12px; background: #f8f9fc; }
+.inline-category-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }

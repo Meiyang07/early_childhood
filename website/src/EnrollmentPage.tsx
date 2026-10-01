@@ -1,17 +1,10 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
-import { schoolDetails, tuitionFees } from './schoolDetails';
+import { useRef,useState, type FormEvent, type ReactNode } from 'react';
+import {useSchool,submitForm} from './SchoolContext';
 
 type ApplicationField = 'childName' | 'birthDate' | 'gender' | 'program' | 'guardianName' | 'phone' | 'email' | 'address' | 'previousSchool' | 'medicalConditions' | 'referral';
 type ApplicationErrors = Partial<Record<ApplicationField, string>>;
 
-const programOptions = ['Infant + Toddler', 'Play Group', 'Pre-Nursery', 'Nursery', 'Preschool', 'Lower Kindergarten', 'Upper Kindergarten', 'Primary'];
 const genderOptions = ['Female', 'Male', 'Other', 'Prefer not to say'];
-const nextSteps = [
-  'We review your application within 2 business days.',
-  'Our team schedules a short parent interview.',
-  'You’ll receive a confirmation and enrollment packet.',
-  'Welcome! Your child’s first day is scheduled.',
-];
 
 function ApplicationInput({ name, label, error, children }: { name: ApplicationField; label: string; error?: string; children: ReactNode }) {
   return <div className="application-field"><label htmlFor={`application-${name}`}>{label}</label>{children}
@@ -20,6 +13,10 @@ function ApplicationInput({ name, label, error, children }: { name: ApplicationF
 }
 
 export default function EnrollmentPage() {
+  const {schoolDetails,tuitionFees,records}=useSchool();
+  const programOptions=records.filter(r=>r.kind==='programs').map(r=>r.name);
+  const [saving,setSaving]=useState(false),[deliveryError,setDeliveryError]=useState('');
+  const requestId=useRef(crypto.randomUUID());
   const [errors, setErrors] = useState<ApplicationErrors>({});
   const [draft, setDraft] = useState('');
   const now = new Date();
@@ -29,7 +26,7 @@ export default function EnrollmentPage() {
     return { id: `application-${name}`, name, 'aria-invalid': errors[name] ? true : undefined, 'aria-describedby': errors[name] ? `application-${name}-error` : undefined };
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const values = new FormData(form);
@@ -56,27 +53,14 @@ export default function EnrollmentPage() {
       return;
     }
 
-    const body = [
-      'ENROLLMENT APPLICATION', '', 'CHILD’S INFORMATION',
-      `Full Name: ${value('childName')}`, `Date of Birth (YYYY-MM-DD): ${value('birthDate')}`,
-      `Gender: ${value('gender')}`, `Applying for Program: ${value('program')}`, '',
-      'PARENT / GUARDIAN INFORMATION', `Full Name: ${value('guardianName')}`,
-      `Phone Number: +977 ${value('phone')}`, `Email Address: ${value('email')}`,
-      `Home Address: ${value('address')}`, '', 'ADDITIONAL INFORMATION',
-      `Previous School: ${value('previousSchool') || 'Not provided'}`,
-      `Medical Conditions: ${value('medicalConditions') || 'Not provided'}`,
-      `How did you hear about us?: ${value('referral') || 'Not provided'}`, '',
-      'I agree to be contacted by the admissions team regarding this application.',
-    ].join('\n');
-    const href = `mailto:${schoolDetails.email}?subject=${encodeURIComponent(`Enrollment application — ${value('childName')}`)}&body=${encodeURIComponent(body)}`;
-    setDraft(href);
-    window.location.href = href;
+    setSaving(true);setDeliveryError('');
+    try{const payload=Object.fromEntries(['childName','birthDate','gender','program','guardianName','phone','email','address','previousSchool','medicalConditions','referral'].map(name=>[name,value(name as ApplicationField)]));const result=await submitForm('admissions',{...payload,requestId:requestId.current});setDraft(result.message??'Your application has been received.');form.reset();requestId.current=crypto.randomUUID();}catch(e){setDeliveryError((e as Error).message);}finally{setSaving(false);}
   }
 
   return <>
     <section className="page-banner banner-blue application-banner"><div className="container">
       <h1>Enroll your child</h1>
-      <p>Take the first step toward a nurturing, Montessori-inspired early education. Fill out the form below and our team will reach out within two business days.</p>
+      <p>Apply for admission to Early Childhood Montessori.</p>
     </div></section>
     <section className="application-section"><div className="container">
       <div className="application-layout">
@@ -86,7 +70,7 @@ export default function EnrollmentPage() {
             const name = target.name as ApplicationField;
             setErrors(previous => ({ ...previous, [name]: undefined }));
           }
-          setDraft('');
+          setDraft('');setDeliveryError('');requestId.current=crypto.randomUUID();
         }}>
           <fieldset><legend>Child’s Information</legend>
             <ApplicationInput name="childName" label="Full Name" error={errors.childName}><input {...controlProps('childName')} required maxLength={120} autoComplete="off" /></ApplicationInput>
@@ -96,7 +80,7 @@ export default function EnrollmentPage() {
           </fieldset>
           <fieldset><legend>Parents/Guardian Information</legend>
             <ApplicationInput name="guardianName" label="Full Name" error={errors.guardianName}><input {...controlProps('guardianName')} required maxLength={120} autoComplete="name" /></ApplicationInput>
-            <ApplicationInput name="phone" label="Phone Number" error={errors.phone}><input {...controlProps('phone')} type="tel" inputMode="numeric" required pattern="[0-9]{10}" maxLength={10} autoComplete="tel-national" title="Enter exactly 10 digits" /></ApplicationInput>
+            <ApplicationInput name="phone" label="Phone Number" error={errors.phone}><span className="nepal-phone"><span aria-hidden="true">+977</span><input {...controlProps('phone')} onInput={e=>{e.currentTarget.value=e.currentTarget.value.replace(/[^0-9]/g,'');}} type="tel" inputMode="numeric" required pattern="[0-9]{10}" maxLength={10} autoComplete="tel-national" title="Enter exactly 10 digits after +977" /></span></ApplicationInput>
             <ApplicationInput name="email" label="Email address" error={errors.email}><input {...controlProps('email')} type="email" required maxLength={160} autoComplete="email" /></ApplicationInput>
             <ApplicationInput name="address" label="Home address" error={errors.address}><input {...controlProps('address')} required maxLength={250} autoComplete="street-address" /></ApplicationInput>
           </fieldset>
@@ -106,13 +90,11 @@ export default function EnrollmentPage() {
             <ApplicationInput name="referral" label="How did you hear about us?" error={errors.referral}><input {...controlProps('referral')} maxLength={160} /></ApplicationInput>
           </fieldset>
           {Object.values(errors).some(Boolean) && <p className="application-error-summary" role="alert">Please check the highlighted fields before submitting.</p>}
-          <button className="application-submit" type="submit">Submit Application</button>
-          <small className="application-delivery-note">This opens an application email for you to send to our admissions team.</small>
-          {draft && <div className="application-draft-notice" role="status"><p>Your application email is ready. Send it in your email app to complete your submission.</p><a href={draft}>Open application email</a></div>}
+          <button className="application-submit" type="submit" disabled={saving}>{saving?'Submitting…':'Submit Application'}</button>
+          {deliveryError&&<p className="application-error-summary" role="alert">{deliveryError}</p>}{draft&&<div className="application-draft-notice" role="status"><p>{draft}</p></div>}
         </form>
         <aside className="application-sidebar" aria-label="Enrollment information">
-          <div className="application-next"><h2>What Happens Next</h2><ol>{nextSteps.map(step => <li key={step}>{step}</li>)}</ol></div>
-          <div className="application-tuition"><h2>Tuition Quick Reference</h2><dl>{tuitionFees.map(fee => <div key={fee.program}><dt>{fee.program}</dt><dd>{fee.monthly}/mo</dd></div>)}</dl></div>
+          <div className="application-tuition"><h2>Monthly tuition</h2><dl>{tuitionFees.map(fee => <div key={fee.program}><dt>{fee.program}</dt><dd>{fee.monthly}/mo</dd></div>)}</dl></div>
           <p className="application-help">Have questions before applying? Call us at <a href={schoolDetails.phoneLink}>{schoolDetails.phone}</a> or visit us during office hours: {schoolDetails.workingDays}, {schoolDetails.workingHours}.</p>
         </aside>
       </div>

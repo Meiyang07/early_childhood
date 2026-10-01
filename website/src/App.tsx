@@ -1,11 +1,12 @@
-import { useEffect, useState, type FormEvent, type MouseEvent, type ReactNode } from 'react';
-import { galleryItems, type GalleryItem } from './galleryData';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from 'react';
+import GalleryViewer,{type GalleryPhoto} from './GalleryViewer';
 import TeamPage from './TeamPage';
 import EnrollmentPage from './EnrollmentPage';
-import { schoolDetails, tuitionFees } from './schoolDetails';
+import {useSchool,submitForm} from './SchoolContext';
+import ReviewsPage from './ReviewsPage';
 import { useSiteMotion } from './useSiteMotion';
 
-const asset = (name: string) => `/assets/${name}`;
+const asset = (name: string) => name.startsWith('/')?name:`/assets/${name}`;
 
 const navItems = [
   ['Home', '/'], ['About', '/about'], ['Programs', '/programs'],
@@ -62,18 +63,20 @@ function Icon({ name, size = 20, className = '' }: { name: IconName; size?: numb
 }
 
 function Brand({ light = false }: { light?: boolean }) {
+  const {schoolDetails}=useSchool();
   return <SiteLink to="/" className={`brand ${light ? 'brand-light' : ''}`} aria-label="Early Childhood Montessori home">
     <img src={asset('school-logo.jpg')} alt="" />
-    <span className="brand-words"><strong>Early Childhood</strong><small>Montessori</small></span>
+    <span className="brand-words"><strong>{schoolDetails.schoolName==='Early Childhood Montessori'?'Early Childhood':schoolDetails.schoolName}</strong><small>Montessori</small></span>
   </SiteLink>;
 }
 
 function Header({ pathname }: { pathname: string }) {
+  const {schoolDetails}=useSchool();
   const [open, setOpen] = useState(false);
   useEffect(() => { setOpen(false); }, [pathname]);
   return <header className="site-header">
     <div className="topbar"><div className="container topbar-inner">
-      <div className="topbar-left"><span><Icon name="pin" size={15}/> Ranipauwa, Pokhara-11,</span><a href="mailto:mail@earlychildhood.edu.np">mail@earlychildhood.edu.np</a></div>
+      <div className="topbar-left"><span><Icon name="pin" size={15}/> {schoolDetails.address}</span><a href={`mailto:${schoolDetails.email}`}>{schoolDetails.email}</a></div>
       <div className="topbar-right"><a href={schoolDetails.phoneLink}><Icon name="phone" size={16}/> {schoolDetails.phone}</a><span><Icon name="clock" size={16}/> {schoolDetails.compactHours}</span></div>
     </div></div>
     <div className="nav-shell"><div className="container nav-inner">
@@ -87,12 +90,13 @@ function Header({ pathname }: { pathname: string }) {
 }
 
 function Footer() {
+  const {schoolDetails,records}=useSchool();
   return <footer className="footer"><div className="container">
     <div className="footer-grid">
       <div className="footer-brand"><Brand light/><p>Nurturing curious minds through child-centered Montessori education.</p></div>
-      <div><h3>Quick Links</h3><SiteLink to="/about">About Us</SiteLink><SiteLink to="/programs">Our Programs</SiteLink><SiteLink to="/admissions">Admissions</SiteLink><SiteLink to="/team">Our Team</SiteLink><SiteLink to="/enroll">Enroll Your Child</SiteLink><SiteLink to="/gallery">Gallery</SiteLink><SiteLink to="/contact">Contact</SiteLink><SiteLink to="/blog">Blog</SiteLink><SiteLink to="/events">Event</SiteLink></div>
-      <div><h3>Programs</h3><SiteLink to="/programs#infant">Infant Program (12-36 months)</SiteLink><SiteLink to="/programs#prenursery">Toddler Program (18-36 months)</SiteLink><SiteLink to="/programs#nursery">Preschool (3-6 years)</SiteLink></div>
-      <div><h3>Contact</h3><a href={schoolMap} target="_blank" rel="noopener noreferrer"><Icon name="pin" size={16}/> Ranipauwa, Pokhara-11, Nepal</a><a href={schoolDetails.phoneLink}><Icon name="phone" size={16}/> {schoolDetails.phone}</a><a href={`mailto:${schoolDetails.email}`}><Icon name="mail" size={16}/> {schoolDetails.email}</a><span><Icon name="clock" size={16}/><span>{schoolDetails.workingDays}<br/>{schoolDetails.workingHours}</span></span></div>
+      <div><h3>Quick Links</h3><SiteLink to="/about">About Us</SiteLink><SiteLink to="/programs">Our Programs</SiteLink><SiteLink to="/admissions">Admissions</SiteLink><SiteLink to="/team">Our Team</SiteLink><SiteLink to="/enroll">Enroll Your Child</SiteLink><SiteLink to="/gallery">Gallery</SiteLink><SiteLink to="/contact">Contact</SiteLink><SiteLink to="/blog">Blog</SiteLink><SiteLink to="/events">Event</SiteLink><SiteLink to="/reviews">Parent Reviews</SiteLink></div>
+      <div><h3>Programs</h3>{records.filter(r=>r.kind==='programs').slice(0,4).map(r=><SiteLink key={r.id} to={`/programs#${r.id}`}>{r.name}</SiteLink>)}</div>
+      <div><h3>Contact</h3><a href={schoolMap} target="_blank" rel="noopener noreferrer"><Icon name="pin" size={16}/> {schoolDetails.address}</a><a href={schoolDetails.phoneLink}><Icon name="phone" size={16}/> {schoolDetails.phone}</a><a href={`mailto:${schoolDetails.email}`}><Icon name="mail" size={16}/> {schoolDetails.email}</a><span><Icon name="clock" size={16}/><span>{schoolDetails.workingDays}<br/>{schoolDetails.workingHours}</span></span></div>
     </div>
     <div className="copyright">© 2026 Montessori Early Childhood. All rights reserved.</div>
   </div></footer>;
@@ -110,11 +114,12 @@ function Partners() {
 }
 
 function Journey({ secondary = 'Email Us' }: { secondary?: 'Email Us' | 'Admission Info' }) {
+  const {schoolDetails}=useSchool();
   return <section className="journey"><div className="container">
     <h2>Ready To Begin Your Journey?</h2>
     <p>Schedule a tour of our school and see the Montessori method in action</p>
     <div className="journey-actions"><SiteLink className="button button-blue" to="/contact?reason=School%20visit#message">Schedule a visit</SiteLink>
-      {secondary === 'Admission Info' ? <SiteLink className="button button-cream" to="/admissions">Admission Info</SiteLink> : <a className="button button-cream" href="mailto:mail@earlychildhood.edu.np">Email Us</a>}
+      {secondary === 'Admission Info' ? <SiteLink className="button button-cream" to="/admissions">Admission Info</SiteLink> : <a className="button button-cream" href={`mailto:${schoolDetails.email}`}>Email Us</a>}
     </div>
   </div></section>;
 }
@@ -134,13 +139,9 @@ const features: { icon: IconName; title: string; detail: string }[] = [
   { icon: 'award', title: 'Proven Method', detail: 'Over 100 years of educational excellence' },
 ];
 
-const programs = [
-  { id: 'infant', emoji: '👶', title: 'Infant Program', age: 'Ages 12-36 months', points: ['Secure attachment with primary caregivers', 'Freedom of movement', 'Sensory exploration', 'Language-rich environment'], color: 'rose' },
-  { id: 'toddler', emoji: '🧸', title: 'Toddler Program', age: 'Ages 18-36 months', points: ['Independence and self-care skills', 'Language development', 'Practical life activities', 'Social interaction'], color: 'sky' },
-  { id: 'preschool', emoji: '📚', title: 'Preschool Program', age: 'Ages 3-6 years', points: ['Academic foundation', 'Cultural studies', 'Mathematical concepts', 'Reading and writing readiness'], color: 'mint' },
-];
-
 function ProgramCards({ expanded = false }: { expanded?: boolean }) {
+  const {records}=useSchool();
+  const programs=records.filter(r=>r.kind==='programs').slice(0,3).map((r,i)=>({id:r.id,title:r.name,age:r.data.age,points:r.data.description.split(/\n/).filter(Boolean),emoji:['👶','🧸','📚'][i],color:['rose','sky','mint'][i]}));
   return <div className="program-grid">{programs.map(program => <article className={`program-card ${program.color}`} id={expanded ? program.id : undefined} key={program.title}>
     <span className="program-emoji" aria-hidden="true">{program.emoji}</span>
     <h3>{program.title}</h3><p>{program.age}</p>
@@ -157,6 +158,7 @@ const welcomePhotos = [
 ];
 
 function HomePage() {
+  const {records}=useSchool();
   return <>
     <section className="home-hero"><div className="container hero-content"><h1>Nurturing Curious Minds</h1><p>Discover the Montessori difference for your child's early year</p>
       <div className="hero-actions"><SiteLink to="/contact?reason=School%20visit#message" className="button hero-primary">Schedule a Visit</SiteLink><SiteLink to="/programs" className="button hero-secondary">Our Programs</SiteLink></div>
@@ -179,11 +181,10 @@ function HomePage() {
     </div></section>
     <section className="program-section"><div className="container"><div className="section-heading"><h2>Our Programs</h2><p>Age appropriate environments designed for optimal development</p></div><ProgramCards /></div></section>
     <section className="testimonials"><div className="container"><div className="section-heading"><h2>What Parents Say</h2><p>Hear from the families who've experienced the Montessori difference</p></div>
-      <div className="testimonial-grid">
-        <blockquote>“Our daughter has blossomed at Montessori Early Childhood. She's more confident, independent, and loves learning!”<footer><strong>Sarah Johnson</strong><span>Parent</span></footer></blockquote>
-        <blockquote>“The teachers truly understand child development. We see progress every day and our son is excited to go to school.”<footer><strong>Michael Chen</strong><span>Parent</span></footer></blockquote>
-        <blockquote>“The Montessori approach has given our twins a strong foundation. They're curious, compassionate, and ready for anything.”<footer><strong>Emily Rodriguez</strong><span>Parent</span></footer></blockquote>
-      </div></div></section>
+      <div className="testimonial-grid">{records.filter(r=>r.kind==='reviews').slice(0,3).map(review=><blockquote key={review.id}><span aria-label={`${review.data.rating} out of 5 stars`}>{'★'.repeat(Number(review.data.rating))}</span><p>{review.data.body}</p><footer><strong>{review.name}</strong><span>Parent</span></footer></blockquote>)}</div>
+      {!records.some(r=>r.kind==='reviews')&&<p className="public-empty">Parent experiences will appear here after the school approves them.</p>}
+      <SiteLink to="/reviews" className="text-link">Read reviews &amp; share your experience →</SiteLink>
+    </div></section>
     <Journey secondary="Admission Info" />
   </>;
 }
@@ -202,14 +203,8 @@ function AboutPage() {
 }
 
 function ProgramsPage() {
-  const schoolPrograms: { id: string; age: string; title: string; description: string; icon: IconName; tone: string }[] = [
-    { id: 'infant', age: '18 months', title: 'Infant + Toddler', description: 'Gentle introduction to a structured environment. Sensory exploration, movement, language stimulation, and bonding through guided play.', icon: 'heart', tone: 'baby' },
-    { id: 'prenursery', age: '2.5–3 Years', title: 'Pre-Nursery', description: 'Building early social skills, language, and independence through creative play, storytelling, music, and Montessori sensorial activities.', icon: 'sun', tone: 'white' },
-    { id: 'nursery', age: '3–4 Years', title: 'Nursery', description: 'Language development, social skills, and creative activities. Structured exploration using authentic Montessori materials in a nurturing classroom.', icon: 'book', tone: 'white dark' },
-    { id: 'lower-kindergarten', age: '4–5 Years', title: 'Lower Kindergarten', description: 'Early literacy, numeracy, science, and practical life activities. Developing curiosity and foundational academic skills with hands-on learning.', icon: 'sparkle', tone: 'blue' },
-    { id: 'upper-kindergarten', age: '5–6 Years', title: 'Upper Kindergarten', description: 'School readiness, leadership, confidence building, and academic preparation. Children develop responsibility and critical thinking for primary school.', icon: 'award', tone: 'slate' },
-    { id: 'primary', age: '6–10 Years', title: 'Primary', description: 'Subject-specialist teachers guide children through each grade with a focus on deep understanding, independent thinking, and academic excellence.', icon: 'book', tone: 'sand' },
-  ];
+  const {records}=useSchool();
+  const schoolPrograms=records.filter(r=>r.kind==='programs').map((r,i)=>({id:r.id,title:r.name,age:r.data.age,description:r.data.description,icon:(['heart','sun','book','sparkle','award','book'][i%6]) as IconName,tone:['baby','white','white dark','blue','slate','sand'][i%6],duration:r.data.duration,teachers:r.data.teachers,capacity:r.data.capacity}));
   const activities: { icon: IconName; label: string }[] = [
     { icon: 'book', label: 'Practical Life' }, { icon: 'sparkle', label: 'Sensorial Activities' },
     { icon: 'users', label: 'Language Development' }, { icon: 'award', label: 'Mathematics' },
@@ -227,14 +222,9 @@ function ProgramsPage() {
     <section className="breakdown"><div className="container">
       <div className="breakdown-title"><span><Icon name="users" size={23}/></span><div><h2>Admission Breakdown</h2><p>Program structure, class duration, and capacity at a glance.</p></div></div>
       <div className="breakdown-table-wrap"><table><thead><tr><th>Program</th><th>Age Range</th><th>Class Duration</th><th>No. of Teachers</th><th>No. of Children</th></tr></thead><tbody>
-        <tr><td><span className="dot purple"/>Infant + Toddler</td><td>18 months</td><td>8 months</td><td>3</td><td>12</td></tr>
-        <tr><td><span className="dot red"/>Pre-Nursery</td><td>2.5–3 years</td><td>6 months</td><td>2</td><td>15</td></tr>
-        <tr><td><span className="dot orange"/>Nursery</td><td>3–4 years</td><td>1 year</td><td>4 <small>2 per section</small></td><td>35 <small>Divided into 2 sections</small></td></tr>
-        <tr><td><span className="dot green"/>Lower Kindergarten</td><td>4–5 years</td><td>1 year</td><td>4 <small>2 per section</small></td><td>35 <small>Divided into 2 sections</small></td></tr>
-        <tr><td><span className="dot purple"/>Upper Kindergarten</td><td>5–6 years</td><td>1 year</td><td>4 <small>2 per section</small></td><td>35 <small>Divided into 2 sections</small></td></tr>
-        <tr><td><span className="dot blue"/>Primary</td><td>6–10 years</td><td>1 year per grade</td><td>7 <small>Subject specialists</small></td><td>16 <small>Maximum per class</small></td></tr>
+        {schoolPrograms.map(program=><tr key={program.id}><td><span className="dot purple"/>{program.title}</td><td>{program.age}</td><td>{program.duration||'Contact school'}</td><td>{program.teachers||'—'}</td><td>{program.capacity||'—'}</td></tr>)}
       </tbody></table></div>
-      <div className="program-callouts"><p>Nursery, LKG &amp; UKG are divided into two sections of up to 17–18 children each.</p><p>Primary classes have a maximum of 16 students per class.</p><p>Primary teachers specialize in their subject areas.</p></div>
+      <div className="program-callouts"><p>Contact our admissions team for current places and class arrangements.</p></div>
     </div></section>
     <section className="activities-section"><div className="container"><h2>Montessori Activities</h2><div className="activities-grid">{activities.map(activity => <div className="activity-tile" key={activity.label}><Icon name={activity.icon} size={22}/><span>{activity.label}</span></div>)}</div></div></section>
   </>;
@@ -257,6 +247,7 @@ const faqs = [
 ];
 
 function AdmissionsPage() {
+  const {tuitionFees,records}=useSchool();
   return <><PageBanner title="Admissions" description="Join our community and give your child a gift of Montessori education" variant="blue" />
     <section className="enrollment-section"><div className="container"><div className="section-heading"><h2>Enrollment Process</h2><p>Four simple steps to join our Montessori community</p></div>
       <div className="step-grid">{steps.map((step, index) => <article key={step.title}><span className="step-icon"><Icon name={step.icon} size={25}/></span><strong>{index + 1}</strong><h3>{step.title}</h3><p>{step.text}</p></article>)}</div>
@@ -270,124 +261,81 @@ function AdmissionsPage() {
     </div></section>
     <section className="requirements-section"><div className="narrow"><h2>Enrollment Requirements</h2><div className="requirements-grid">
       <div className="requirement-card"><h3>Required Documents</h3><ul className="check-list"><li>Completed enrollment application</li><li>Child's birth certificate</li><li>Current immunization records</li><li>Emergency contact information</li><li>Medical release forms</li></ul></div>
-      <div className="requirement-card"><h3>Age Requirements</h3><dl><dt>Infant Program</dt><dd>6 weeks to 18 months</dd><dt>Toddler Program</dt><dd>18 months to 3 years</dd><dt>Preschool Program</dt><dd>3 years to 6 years (must be potty trained)</dd></dl><p className="requirement-note"><strong>Note:</strong> Children must meet age requirements by September 1st of the enrollment year.</p></div>
+      <div className="requirement-card"><h3>Age Requirements</h3><dl>{records.filter(r=>r.kind==='programs').map(r=><div key={r.id}><dt>{r.name}</dt><dd>{r.data.age}</dd></div>)}</dl><p className="requirement-note">Contact the school to confirm the right program for your child.</p></div>
     </div></div></section>
     <section className="faq-section"><div className="narrow"><h2>Frequently Asked Questions</h2><div className="faq-list">{faqs.map(([q,a]) => <article key={q}><h3>{q}</h3><p>{a}</p></article>)}</div></div></section>
     <Journey />
   </>;
 }
 
-// Lead with supplied photos in the same category order as the designer's twelve-card layout.
-const featuredGalleryImages = [
-  'gallery/graduation-2081-01.webp', 'gallery/outdoor-02.jpg', 'gallery/classroom-01.jpg',
-  'gallery/cultural-01.jpg', 'gallery/events-10.webp', 'gallery/cultural-02.jpg',
-  'gallery/outdoor-05.jpg', 'gallery/cultural-03.jpg', 'gallery/events-11.webp',
-  'gallery/activities-13.jpg', 'gallery/activities-23.jpg', 'gallery/activities-27.webp',
-];
-const featuredImages = new Set(featuredGalleryImages);
-const galleryTiles: GalleryItem[] = [
-  ...featuredGalleryImages.map(image => galleryItems.find(item => item.image === image)!),
-  ...galleryItems.filter(item => !featuredImages.has(item.image)),
-];
-
 function GalleryPage() {
+  const {records}=useSchool();
+  const galleryTiles=useMemo<GalleryPhoto[]>(()=>records.filter(r=>r.kind==='gallery').map(r=>({id:r.id,image:r.data.imagePath,alt:r.data.alt,categories:Array.from(new Set([r.data.category,...(r.data.categories??'').split(',')].map(value=>value?.trim()).filter((value):value is string=>!!value))),portrait:r.data.portrait==='true'})),[records]);
   const [filter, setFilter] = useState('All');
-  const [selected, setSelected] = useState<GalleryItem | null>(null);
-  const categories = ['All', 'Activities', 'Classroom', 'Outdoor', 'Cultural', 'Events', 'Graduation'];
-  const visible = galleryTiles.filter(item => filter === 'All' || item.categories.includes(filter));
-  const selectedIndex = selected ? visible.findIndex(item => item.image === selected.image) : -1;
-  const showAdjacent = (step: number) => {
-    if (selectedIndex >= 0) setSelected(visible[(selectedIndex + step + visible.length) % visible.length]);
-  };
-  useEffect(() => {
-    if (!selected) return;
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelected(null);
-      if (event.key === 'ArrowLeft') showAdjacent(-1);
-      if (event.key === 'ArrowRight') showAdjacent(1);
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => { document.body.style.overflow = originalOverflow; window.removeEventListener('keydown', handleKey); };
-  }, [selected, filter]);
+  const [selectedId,setSelectedId]=useState<string|null>(null);
+  const categories=['All',...new Set(['Activities','Classroom','Outdoor','Cultural','Events','Graduation',...galleryTiles.flatMap(item=>item.categories)])];
+  const visible=useMemo(()=>galleryTiles.filter(item=>filter==='All'||item.categories.includes(filter)),[galleryTiles,filter]);
+  const selected=visible.find(item=>item.id===selectedId);
   return <><PageBanner title="Our Gallery" description="A window into the vibrant, joyful, and purposeful daily life at Early Childhood Education Centre." />
-    <section className="gallery-section"><div className="container"><div className="gallery-filters" aria-label="Filter photos">{categories.map(category => <button type="button" key={category} onClick={() => { setFilter(category); setSelected(null); }} className={filter === category ? 'selected' : ''} aria-pressed={filter === category}>{category}</button>)}</div>
-      <div className="gallery-grid" key={filter}>{visible.map(item => <button type="button" className="gallery-item" key={item.image} onClick={() => setSelected(item)} aria-label={`View photo: ${item.alt}`}><img src={asset(item.image)} alt={item.alt} loading="lazy" decoding="async" /><span>{filter === 'All' ? item.categories[0] : filter}</span></button>)}</div>
+    <section className="gallery-section"><div className="container"><div className="gallery-filters" aria-label="Filter photos">{categories.map(category => <button type="button" key={category} onClick={() => { setFilter(category); setSelectedId(null); }} className={filter === category ? 'selected' : ''} aria-pressed={filter === category}>{category}</button>)}</div>
+      <div className="gallery-grid" key={filter}>{visible.map(item => <button type="button" className="gallery-item" key={item.id} onClick={() => setSelectedId(item.id)} aria-label={`View photo: ${item.alt}`}><img src={asset(item.image)} alt={item.alt} loading="lazy" decoding="async" /><span>{filter === 'All' ? item.categories[0] : filter}</span></button>)}</div>{visible.length===0&&<p className="gallery-empty" role="status">No published photos in this category yet.</p>}
     </div></section>
-    {selected && <div className="modal-backdrop" role="presentation" onClick={() => setSelected(null)}><div className="lightbox" role="dialog" aria-modal="true" aria-label={selected.alt} onClick={e => e.stopPropagation()}><button type="button" className="modal-close" onClick={() => setSelected(null)} aria-label="Close photo"><Icon name="close"/></button><img key={selected.image} src={asset(selected.image)} alt={selected.alt}/><div className="lightbox-toolbar"><button type="button" onClick={() => showAdjacent(-1)} aria-label="Previous photo">←</button><p>{selected.alt}<small>{selectedIndex + 1} / {visible.length}</small></p><button type="button" onClick={() => showAdjacent(1)} aria-label="Next photo">→</button></div></div></div>}
+    {selected&&selectedId&&<GalleryViewer photos={visible} selectedId={selectedId} onSelect={setSelectedId} onClose={()=>setSelectedId(null)}/>}
     <Journey secondary="Admission Info" />
   </>;
 }
 
-const events = [
-  { day: '15', month: 'Jan 2025', title: 'Open Admissions Day', category: 'Admissions', description: 'Visit our campus, meet our teachers, and learn about all our programs. Registration encouraged.', time: '10:00 AM – 12:00 PM', color: 'cyan' },
-  { day: '14', month: 'Feb 2025', title: "Valentine's Craft Day", category: 'Activities', description: 'Children create heartfelt cards and crafts celebrating love, kindness, and friendship.', time: '9:00 AM – 12:00 PM', color: 'slate' },
-  { day: '15', month: 'Feb 2025', title: 'Annual Sports Day', category: 'Sports', description: 'Fun-filled athletic events, races, and games celebrating our young champions and spirited learners.', time: '9:00 AM – 2:00 PM', color: 'steel' },
-  { day: '05', month: 'Mar 2025', title: 'Spring Arts Festival', category: 'Cultural', description: 'Art exhibitions, cultural performances, and Montessori showcases for the whole family to enjoy.', time: '10:00 AM – 4:00 PM', color: 'charcoal' },
-  { day: '20', month: 'Mar 2025', title: 'Parent-Teacher Meeting', category: 'Meeting', description: "Individual progress discussions with your child's teacher. Appointment booking is required.", time: '8:30 AM – 5:00 PM', color: 'electric' },
-  { day: '22', month: 'Apr 2025', title: 'Earth Day Celebration', category: 'Outdoor', description: 'Nature walks, tree-planting, and eco-art activities celebrating our beautiful Himalayan environment.', time: '9:00 AM – 1:00 PM', color: 'royal' },
-];
-
 function EventsPage() {
+  const {records}=useSchool();
+  const events=records.filter(r=>r.kind==='events').sort((a,b)=>(b.data.date??'').localeCompare(a.data.date??'')).map((r,i)=>({title:r.name,day:r.data.date?.slice(8)||'—',month:r.data.date?new Intl.DateTimeFormat('en',{month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(r.data.date+'T00:00:00Z')):'',category:r.data.category||'School Event',description:r.data.description,time:r.data.time,location:r.data.location,color:['cyan','slate','steel','charcoal','electric','royal'][i%6]}));
   return <><PageBanner title="Events & Activities" description="Stay up to date with all the exciting events, celebrations, and activities happening throughout the year." />
-    <section className="events-section"><div className="events-list">{events.map(event => <article className="event-card" key={event.title}><div className={`event-date ${event.color}`}><strong>{event.day}</strong><span>{event.month}</span></div><div className="event-copy"><div className="event-title-line"><h2>{event.title}</h2><span className={`event-tag ${event.category.toLowerCase()}`}>{event.category}</span></div><p>{event.description}</p><small><Icon name="clock" size={15}/> {event.time}</small></div></article>)}</div></section>
+    <section className="events-section"><div className="events-list">{events.map(event => <article className="event-card" key={event.title}><div className={`event-date ${event.color}`}><strong>{event.day}</strong><span>{event.month}</span></div><div className="event-copy"><div className="event-title-line"><h2>{event.title}</h2><span className={`event-tag ${event.category.toLowerCase()}`}>{event.category}</span></div><p>{event.description}</p><small><Icon name="clock" size={15}/> {event.time} · {event.location}</small></div></article>)}</div></section>
     <Journey />
   </>;
 }
 
-const posts = [
-  { image: 'blog-montessori.png', tag: 'Montessori', date: 'Dec 10, 2024', title: '5 Ways Montessori Education Benefits Your Child', excerpt: 'Discover how the Montessori method builds independence, creativity, and a deep love of learning from the very earliest years of life.', color: 'blue' },
-  { image: 'blog-parenting.jpg', tag: 'Parenting', date: 'Nov 28, 2024', title: "Supporting Your Child's Learning at Home", excerpt: 'Simple, effective strategies for Montessori-inspired activities that complement school learning and strengthen family bonds.', color: 'green' },
-  { image: 'blog-outdoor.jpg', tag: 'Activities', date: 'Nov 15, 2024', title: 'The Importance of Outdoor Play in Early Childhood', excerpt: 'Research shows outdoor play is essential for cognitive, physical, and emotional development. Here is how we bring it to life every day.', color: 'yellow' },
-  { image: 'blog-school-life.jpg', tag: 'School Life', date: 'Oct 30, 2024', title: 'Annual Day 2024: A Celebration of Young Talent', excerpt: "Our Annual Day was a spectacular showcase of students' creativity, confidence, and love for the performing arts in Pokhara.", color: 'orange' },
-  { image: 'blog-cultural.jpg', tag: 'Cultural', date: 'Oct 14, 2024', title: 'Holi Festival: Colors, Joy & Community', excerpt: 'Our annual Holi celebration brought together students, teachers, and parents in a vibrant explosion of color and laughter.', color: 'purple' },
-  { image: 'blog-admissions.png', tag: 'Admissions', date: 'Oct 1, 2024', title: "What to Expect in Your Child's First Week", excerpt: 'Transition tips and what the first week at Early Childhood Education Centre looks like — for both excited children and their parents.', color: 'teal' },
-];
-
 function BlogPage() {
-  const [selected, setSelected] = useState<(typeof posts)[number] | null>(null);
+  const {records}=useSchool();
+  const posts=records.filter(r=>r.kind==='blog').map((r,i)=>({id:r.id,title:r.name,image:r.data.imagePath||'/assets/school-campus.jpg',tag:r.data.category||'School News',date:r.data.date?new Intl.DateTimeFormat('en',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(r.data.date+'T00:00:00Z')):'',excerpt:r.data.excerpt,body:r.data.body,author:r.data.author,color:['blue','green','yellow','orange','purple','teal'][i%6]}));
+  const [selectedId,setSelected]=useState<string|null>(null);
+  const selected=posts.find(p=>p.id===selectedId);
   return <><PageBanner title="Blog & Insights" description="Thoughtful articles, expert tips, and heartwarming stories from our Montessori educators and child development team." />
     <section className="blog-section"><div className="container blog-grid">{posts.map(post => <article className="blog-card" key={post.title}>
       <div className="blog-image"><img src={asset(post.image)} alt=""/><span className={`post-tag ${post.color}`}>{post.tag}</span></div>
-      <div className="blog-content"><small><Icon name="clock" size={15}/> {post.date}</small><h2>{post.title}</h2><p>{post.excerpt}</p><button type="button" className="read-link" onClick={() => setSelected(post)}>Read Article <Icon name="arrow" size={17}/></button></div>
+      <div className="blog-content"><small><Icon name="clock" size={15}/> {post.date}</small><h2>{post.title}</h2><p>{post.excerpt}</p><button type="button" className="read-link" onClick={() => setSelected(post.id)}>Read Article <Icon name="arrow" size={17}/></button></div>
     </article>)}</div></section>
-    {selected && <div className="modal-backdrop" role="presentation" onClick={() => setSelected(null)}><article role="dialog" aria-modal="true" aria-label={selected.title} className="article-dialog" onClick={e => e.stopPropagation()}><button type="button" className="modal-close" aria-label="Close article" onClick={() => setSelected(null)}><Icon name="close"/></button><img src={asset(selected.image)} alt=""/><div><small>{selected.tag} · {selected.date}</small><h2>{selected.title}</h2><p>{selected.excerpt}</p><p>Learn more about our approach by speaking with our Montessori educators or arranging a visit to the school.</p><SiteLink to="/contact?reason=School%20visit#message" className="button button-blue" onClick={() => setSelected(null)}>Visit our school</SiteLink></div></article></div>}
+    {selected && <div className="modal-backdrop" role="presentation" onClick={() => setSelected(null)}><article role="dialog" aria-modal="true" aria-label={selected.title} className="article-dialog" onClick={e => e.stopPropagation()}><button type="button" className="modal-close" aria-label="Close article" onClick={() => setSelected(null)}><Icon name="close"/></button><img src={asset(selected.image)} alt=""/><div><small>{selected.tag} · {selected.date}</small><h2>{selected.title}</h2><p className="article-author">By {selected.author}</p><p className="article-body">{selected.body}</p><SiteLink to="/contact?reason=School%20visit#message" className="button button-blue" onClick={() => setSelected(null)}>Visit our school</SiteLink></div></article></div>}
     <Journey />
   </>;
 }
 
 function ContactPage() {
-  const [notice, setNotice] = useState('');
-  const queryReason = new URLSearchParams(window.location.search).get('reason');
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const values = new FormData(event.currentTarget);
-    const name = String(values.get('name') || '');
-    const phone = String(values.get('phone') || '');
-    const email = String(values.get('email') || '');
-    const message = String(values.get('message') || '');
-    const subject = queryReason || `Website inquiry from ${name}`;
-    const body = `Name: ${name}\nPhone: ${phone}\nEmail: ${email}\n\nMessage:\n${message}`;
-    setNotice('Your email app will open with the message. Please send it there to finish.');
-    window.location.href = `mailto:mail@earlychildhood.edu.np?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const {schoolDetails}=useSchool();
+  const [notice,setNotice]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+  const requestId=useRef(crypto.randomUUID());
+  const queryReason=new URLSearchParams(window.location.search).get('reason');
+  async function submit(event:FormEvent<HTMLFormElement>){
+    event.preventDefault();const form=event.currentTarget,values=new FormData(form);
+    const name=String(values.get('name')||''),phone=String(values.get('phone')||''),email=String(values.get('email')||''),body=String(values.get('message')||'');
+    setBusy(true);setError('');setNotice('');
+    try{const result=await submitForm('messages',{requestId:requestId.current,name,phone,email,body,subject:queryReason||`Website inquiry from ${name}`});setNotice(result.message??'Your message has been received.');form.reset();requestId.current=crypto.randomUUID();}catch(e){setError((e as Error).message);}finally{setBusy(false);}
   }
   return <><PageBanner title="Contact Us" description="We would love to hear from you. Reach out to our team anytime — we are here to help your family." />
     <section className="contact-section"><div className="container"><div className="contact-heading"><span className="eyebrow">Get in Touch</span><h2>We Would Love to Hear from You</h2><p>Visit us at Tulsi Marg, Ranipauwa, Pokhara — or reach out anytime and we will<br className="desktop-only"/> respond promptly.</p></div>
       <div className="contact-grid"><div className="contact-details"><img className="contact-school" src={asset('school-campus.jpg')} alt="Early Childhood Montessori campus"/>
-        <div className="contact-info-card"><span className="info-icon address"><Icon name="pin"/></span><div><h3>Address</h3><p>11 Tulsi Marg (Tulsimarga), Ranipauwa<br/>Pokhara-11, Gandaki Province 33700, Nepal</p><small>Plus Code: 6XCW+HXG Pokhara</small></div></div>
+        <div className="contact-info-card"><span className="info-icon address"><Icon name="pin"/></span><div><h3>Address</h3><p>{schoolDetails.address}</p><small>Plus Code: 6XCW+HXG Pokhara</small></div></div>
         <div className="contact-info-card"><span className="info-icon phone"><Icon name="phone"/></span><div><h3>Phone</h3><p><a href={schoolDetails.phoneLink}>{schoolDetails.phone}</a></p><small>Call us {schoolDetails.workingDays}, {schoolDetails.workingHours}</small></div></div>
-        <div className="contact-info-card"><span className="info-icon email"><Icon name="mail"/></span><div><h3>Email</h3><p><a href="mailto:mail@earlychildhood.edu.np">mail@earlychildhood.edu.np</a></p><small><a href="mailto:ececmontessori@gmail.com">ececmontessori@gmail.com</a></small></div></div>
-        <div className="contact-info-card"><span className="info-icon hours"><Icon name="clock"/></span><div><h3>Working Hours</h3><p>{schoolDetails.workingDays}: {schoolDetails.workingHours}</p><small>Saturday &amp; Sunday: Closed</small></div></div>
+        <div className="contact-info-card"><span className="info-icon email"><Icon name="mail"/></span><div><h3>Email</h3><p><a href={`mailto:${schoolDetails.email}`}>{schoolDetails.email}</a></p><small><a href="mailto:ececmontessori@gmail.com">ececmontessori@gmail.com</a></small></div></div>
+        <div className="contact-info-card"><span className="info-icon hours"><Icon name="clock"/></span><div><h3>Working Hours</h3><p>{schoolDetails.workingDays}: {schoolDetails.workingHours}</p><small>Please contact us to arrange a visit.</small></div></div>
         <div className="map-embed"><iframe title="Map showing Early Childhood Montessori School in Ranipauwa, Pokhara" src="https://www.google.com/maps?q=28.2223921%2C83.9922149&z=17&output=embed" loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen /></div>
         <a className="map-button" href={schoolMap} target="_blank" rel="noopener noreferrer"><Icon name="pin" size={17}/> Open in Google Maps — Early Childhood Montessori School</a>
-      </div><div className="contact-form-panel" id="message"><h3>Send Us a Message</h3><p>We typically reply within one business day.</p>
-        <form onSubmit={submit}><div className="input-row"><label>Full Name<input name="name" required placeholder="Your full name" autoComplete="name"/></label><label>Phone Number<input name="phone" type="tel" required placeholder="+977-98XXXXXXXX" autoComplete="tel"/></label></div>
-          <label>Email Address<input name="email" required type="email" placeholder="your@email.com" autoComplete="email"/></label>
-          <label>Message<textarea name="message" required rows={4} placeholder="Tell us about your child and what you would like to know..."/></label>
-          <button className="send-button" type="submit">Send Message <Icon name="send" size={18}/></button>
+      </div><div className="contact-form-panel" id="message"><h3>Send Us a Message</h3>
+        <form onSubmit={submit} onChange={()=>{requestId.current=crypto.randomUUID();setNotice('');}}><div className="input-row"><label>Full Name<input name="name" required minLength={2} maxLength={120} placeholder="Your full name" autoComplete="name"/></label><div className="phone-field"><label htmlFor="contact-phone">Phone Number</label><span className="nepal-phone"><span aria-hidden="true">+977</span><input id="contact-phone" name="phone" type="tel" inputMode="numeric" required pattern="[0-9]{10}" maxLength={10} title="Enter exactly 10 digits after +977" placeholder="98XXXXXXXX" autoComplete="tel-national" onInput={e=>{e.currentTarget.value=e.currentTarget.value.replace(/[^0-9]/g,'');}}/></span></div></div>
+          <label>Email Address<input name="email" required maxLength={200} type="email" placeholder="your@email.com" autoComplete="email"/></label>
+          <label>Message<textarea name="message" required minLength={2} maxLength={4000} rows={4} placeholder="Tell us about your child and what you would like to know..."/></label>
+          <button className="send-button" type="submit" disabled={busy}>{busy?'Sending…':'Send Message'} <Icon name="send" size={18}/></button>{error&&<p role="alert" className="form-notice form-error">{error}</p>}
           {notice && <p role="status" className="form-notice">{notice}</p>}
-        </form><small className="email-direct">Or email us directly at <a href="mailto:mail@earlychildhood.edu.np">mail@earlychildhood.edu.np</a></small>
+        </form><small className="email-direct">Or email us directly at <a href={`mailto:${schoolDetails.email}`}>{schoolDetails.email}</a></small>
       </div></div>
     </div></section><Journey />
   </>;
@@ -405,7 +353,7 @@ function App() {
   const page: Record<string, ReactNode> = {
     '/': <HomePage />, '/about': <AboutPage />, '/programs': <ProgramsPage />,
     '/admissions': <AdmissionsPage />, '/enroll': <EnrollmentPage />, '/team': <TeamPage />, '/gallery': <GalleryPage />,
-    '/events': <EventsPage />, '/blog': <BlogPage />, '/contact': <ContactPage />,
+    '/events': <EventsPage />, '/blog': <BlogPage />, '/contact': <ContactPage />, '/reviews': <ReviewsPage />,
   };
   return <><div className="reading-progress" aria-hidden="true"><span /></div><Header pathname={pathname}/><main className="page-content" key={pathname}>{page[pathname] || <section className="not-found"><h1>Page not found</h1><SiteLink to="/" className="button button-blue">Return home</SiteLink></section>}</main><Partners /><Footer /></>;
 }

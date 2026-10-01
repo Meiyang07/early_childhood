@@ -4,7 +4,7 @@ const revealSelector = [
   'main .section-heading', 'main .welcome-section h2', 'main .quote-section h2',
   'main .quote-row > *', 'main .welcome-copy', 'main .welcome-photo',
   'main .about-intro > *', 'main .team-intro-copy', 'main .team-illustration',
-  'main .team-heading', 'main .team-tabs', 'main article:not(.article-dialog)',
+  'main .team-heading', 'main .team-tabs', 'main article:not(.article-dialog):not(.staff-card)',
   'main .gallery-filters', 'main .gallery-item', 'main .activity-tile',
   'main .contact-heading', 'main .contact-details > *', 'main .contact-form-panel',
   'main .application-form fieldset', 'main .application-sidebar > *',
