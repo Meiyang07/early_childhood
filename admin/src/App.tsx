@@ -6,12 +6,14 @@ import AdminPortal from './admin-portal';
 import {ForgotPasswordForm} from './AccountForms';
 import {adminKinds,type PortalData,type Section} from './admin-model';
 import {navigate,usePath,Link} from './navigation';
+import {authFetch} from './auth';
 
 type Account={username:string;name:string|null};
-type Session={authenticated:boolean;account?:Account};
+type Session={authenticated:boolean;account?:Account;accessExpiresAt?:number;sessionExpiresAt?:number};
 
 async function sessionRequest(){
-  const response=await fetch('/api/auth/session',{cache:'no-store'});
+  const response=await authFetch('/api/auth/session');
+  if(response.status===401)return {authenticated:false};
   if(!response.ok)throw new Error('Unable to connect. Please try again.');
   return response.json() as Promise<Session>;
 }
@@ -26,7 +28,8 @@ export default function App(){
       const result=await sessionRequest();
       setSession(result);setError('');
       if(result.authenticated){
-        const response=await fetch('/api/admin',{cache:'no-store'});
+        const response=await authFetch('/api/admin');
+        if(response.status===401){setSession({authenticated:false});setData(null);return;}
         const payload=await response.json();
         if(!response.ok)throw new Error(payload.error??'Could not load school records.');
         setData(payload);
@@ -36,35 +39,43 @@ export default function App(){
   useEffect(()=>{
     void load();
     const expired=()=>{setSession({authenticated:false});setData(null);};
+    const changed=()=>{void load();};
     window.addEventListener('admin-session-expired',expired);
-    return()=>window.removeEventListener('admin-session-expired',expired);
+    window.addEventListener('admin-auth-changed',changed);
+    return()=>{window.removeEventListener('admin-session-expired',expired);window.removeEventListener('admin-auth-changed',changed);};
   },[load]);
   async function signedIn(){await load();navigate('/admin');}
   async function logout(){
-    const response=await fetch('/api/auth/logout',{method:'POST'});
+    const response=await authFetch('/api/auth/logout',{method:'POST'});
     if(!response.ok){setError('Could not log out. Please try again.');return;}
     setSession({authenticated:false});setData(null);navigate('/');
   }
   if(error)return <main className="unavailable"><img src="/assets/school-logo.jpg" width="90" height="90" alt="School logo"/><h1>Unable to open the admin panel</h1><p role="alert">{error}</p><button className="primary-button" onClick={load}>Try again</button></main>;
   if(!session)return <main className="unavailable"><img src="/assets/school-logo.jpg" width="90" height="90" alt="School logo"/><p>Loading…</p><Skeleton className="h-3 w-48"/></main>;
-  if(!session.authenticated||path==='/'||path==='/login')return <LoginPage session={session} onSignedIn={signedIn}/>;
+  if(!session.authenticated||path==='/'||path==='/login')return <LoginPage session={session} onSignedIn={signedIn} onLogout={logout}/>;
   const part=path.replace(/^\/admin\/?/,'')||'overview';
   if(!path.startsWith('/admin')||!['overview','settings',...adminKinds].includes(part))return <main className="unavailable"><h1>Page not found</h1><Link className="primary-button" href="/admin">Open dashboard</Link></main>;
   if(!data)return <main className="unavailable"><p>Loading school records…</p></main>;
   return <AdminPortal section={part as Section} initial={data} account={session.account!} onLogout={logout}/>;
 }
 
-function LoginPage({session,onSignedIn}:{session:Session;onSignedIn:()=>Promise<void>}){
+function LoginPage({session,onSignedIn,onLogout}:{session:Session;onSignedIn:()=>Promise<void>;onLogout:()=>Promise<void>}){
   const [username,setUsername]=useState('');
   const [password,setPassword]=useState('');
   const [visible,setVisible]=useState(false);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState('');
   const [help,setHelp]=useState(false);
+  async function signOut(){
+    setError('');setSaving(true);
+    try{await onLogout();setUsername('');setPassword('');}
+    catch(e){setError((e as Error).message);}
+    finally{setSaving(false);}
+  }
   async function submit(event:FormEvent){
     event.preventDefault();setError('');setSaving(true);
     try{
-      const response=await fetch('/api/auth/login',{
+      const response=await authFetch('/api/auth/login',{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password}),
       });
       const result=await response.json();
@@ -87,6 +98,8 @@ function LoginPage({session,onSignedIn}:{session:Session;onSignedIn:()=>Promise<
         {session.authenticated?<>
           <p className="login-welcome">Signed in as {session.account?.username}.</p>
           <Link className="login-button" href="/admin">Open admin panel</Link>
+          <button className="login-logout" type="button" onClick={signOut} disabled={saving}>{saving?'Logging out…':'Log out'}</button>
+          {error&&<p className="login-error" role="alert">{error}</p>}
         </>:<>
           <p className="login-welcome">Log in.</p>
           <form onSubmit={submit}>

@@ -3,7 +3,8 @@ import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {toast} from 'sonner';
-async function api<T=unknown>(path:string,method='GET',body?:unknown):Promise<T>{const response=await fetch(path,{method,cache:'no-store',headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined});const result=await response.json();if(response.status===401)window.dispatchEvent(new Event('admin-session-expired'));if(!response.ok)throw new Error(result.error??'Could not complete the request.');return result;}
+import {authFetch} from './auth';
+async function api<T=unknown>(path:string,method='GET',body?:unknown):Promise<T>{const response=await authFetch(path,{method,headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined});const result=await response.json();if(response.status===401)window.dispatchEvent(new Event('admin-session-expired'));if(!response.ok)throw new Error(result.error??'Could not complete the request.');return result;}
 function CodeInput({value,onChange,id}:{value:string;onChange:(value:string)=>void;id:string}){return <div className="form-field"><label htmlFor={id}>Six-digit verification code</label><Input id={id} value={value} onChange={e=>onChange(e.target.value.replace(/[^0-9]/g,''))} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" minLength={6} maxLength={6} required/></div>;}
 export function ForgotPasswordForm({initialUsername,onDone}:{initialUsername:string;onDone:()=>void}){
  const [username,setUsername]=useState(initialUsername),[code,setCode]=useState(''),[password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[requested,setRequested]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');

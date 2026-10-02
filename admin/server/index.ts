@@ -1,9 +1,9 @@
 import http,{type IncomingMessage,type ServerResponse} from 'node:http';
-import { createHash,randomBytes,randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { readFile,stat,writeFile,unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { z,ZodError } from 'zod';
-import { port,publicPort,publicUiPort,uiPort,publicOrigins,projectRoot,allowedOrigins,sessionCookie,sessionLifetime } from './config.js';
+import { port,publicPort,publicUiPort,uiPort,publicOrigins,projectRoot,allowedOrigins } from './config.js';
 import { hashPassword,verifyPassword,dummyPasswordHash } from './passwords.js';
 import * as store from './store.js';
 import { kindSchema,settingsSchema,categoryKinds,categoryNameSchema,validateRecord as modelValidateRecord,type Kind,type CategoryLists } from '../src/admin-model.js';
@@ -11,6 +11,7 @@ import {stream,closeStreams,changed} from './live.js';
 import {mailConfigured,queueMail,flushMail,mailSummary,recordMail,retryMail} from './mailer.js';
 import {issueCode,consumeCode} from './verification.js';
 import {initializeAdminAccount} from './initial-admin.js';
+import {currentSession,hasRefreshToken,sessionPayload,signIn,refreshSession,revokeRequest,clearAuthCookies} from './auth.js';
 class HttpError extends Error{constructor(public status:number,message:string){super(message);}}
 function validateRecord(kind:Kind,input:unknown,categories?:CategoryLists){try{return modelValidateRecord(kind,input,categories);}catch(error){if(error instanceof ZodError)throw error;throw new HttpError(400,(error as Error).message);}}
 const usernameSchema=z.string().trim().min(1,'Enter a username.').max(120);
@@ -18,28 +19,38 @@ const accountSchema=z.object({username:usernameSchema,password:z.string().min(8,
 const revisions=z.object({revision:z.number().int().nonnegative()}).strict();
 const failures=new Map<string,{count:number;until:number}>();
 function json(response:ServerResponse,status:number,data:unknown){response.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});response.end(JSON.stringify(data));}
-function sessionHash(request:IncomingMessage){const cookie=request.headers.cookie?.split(';').map(v=>v.trim()).find(v=>v.startsWith(`${sessionCookie}=`))?.slice(sessionCookie.length+1);if(!cookie||! /^[a-f0-9]{64}$/.test(cookie))return null;return createHash('sha256').update(cookie).digest('hex');}
-function currentUser(request:IncomingMessage){const hash=sessionHash(request);return hash?store.userForSession(hash):undefined;}
-function requireUser(request:IncomingMessage){const user=currentUser(request);if(!user)throw new HttpError(401,'Your session has expired. Please log in.');return user;}
+function currentUser(request:IncomingMessage){return currentSession(request)?.user;}
+function requireSession(request:IncomingMessage){const session=currentSession(request);if(!session)throw new HttpError(401,'Your access token has expired. Please sign in again.');return session;}
+function requireUser(request:IncomingMessage){return requireSession(request).user;}
 function requireOrigin(request:IncomingMessage,origins=allowedOrigins){if(!request.headers.origin||!origins.has(request.headers.origin)||request.headers['sec-fetch-site']==='cross-site')throw new HttpError(403,'Please reload this page and try again.');}
 async function body(request:IncomingMessage,max:number){if(Number(request.headers['content-length']??0)>max)throw new HttpError(413,'The submitted file or record is too large.');let total=0;const chunks:Buffer[]=[];for await(const chunk of request){const part=Buffer.isBuffer(chunk)?chunk:Buffer.from(chunk);total+=part.length;if(total>max)throw new HttpError(413,'The submitted file or record is too large.');chunks.push(part);}return Buffer.concat(chunks,total);}
 async function readJson(request:IncomingMessage){if(!request.headers['content-type']?.includes('application/json'))throw new HttpError(415,'Use a JSON request.');try{return JSON.parse((await body(request,70000)).toString('utf8')) as unknown;}catch(error){if(error instanceof HttpError)throw error;throw new HttpError(400,'Could not read the submitted form.');}}
-function newSession(response:ServerResponse,user:store.User){const token=randomBytes(32).toString('hex');store.saveSession(createHash('sha256').update(token).digest('hex'),user.id,Date.now()+sessionLifetime);response.setHeader('Set-Cookie',`${sessionCookie}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${sessionLifetime/1000}`);return {authenticated:true,account:{username:user.username,name:null}};}
 function assetBelongsToUser(owner:string,imagePath?:string){if(imagePath?.startsWith('/api/media/')&&!store.findAsset(owner,imagePath.split('/').pop()!))throw new HttpError(400,'Photo not found. Upload it again.');}
 function checkAttempts(request:IncomingMessage){const key=request.socket.remoteAddress??'local',attempts=failures.get(key);if(attempts&&attempts.until>Date.now()&&attempts.count>=8)throw new HttpError(429,'Too many login attempts. Please wait 10 minutes.');return key;}
 function failedAttempt(key:string){const existing=failures.get(key);failures.set(key,{count:existing&&existing.until>Date.now()?existing.count+1:1,until:Date.now()+10*60*1000});}
 async function api(request:IncomingMessage,response:ServerResponse,url:URL){
  const method=request.method??'GET',route=url.pathname;
  if(method!=='GET'&&method!=='HEAD')requireOrigin(request);
- if(route==='/api/auth/session'&&method==='GET'){const user=currentUser(request);return json(response,200,{authenticated:!!user,...(user?{account:{username:user.username,name:null}}:{})});}
+ if(route==='/api/auth/session'&&method==='GET'){
+  const session=currentSession(request);
+  if(session)return json(response,200,sessionPayload(session));
+  if(hasRefreshToken(request))throw new HttpError(401,'Your access token has expired.');
+  return json(response,200,{authenticated:false});
+ }
  if(route==='/api/auth/setup')throw new HttpError(404,'This action was not found.');
  if(route==='/api/auth/login'&&method==='POST'){
   const key=checkAttempts(request),input=accountSchema.parse(await readJson(request)),user=store.findUser(input.username);
   const valid=await verifyPassword(input.password,user?.password_hash??dummyPasswordHash);
-  if(!user||!valid){failedAttempt(key);throw new HttpError(401,'Username or password is incorrect.');}
-  failures.delete(key);return json(response,200,newSession(response,user));
+  if(!user||!valid||store.findUser(input.username)?.password_hash!==user.password_hash){failedAttempt(key);throw new HttpError(401,'Username or password is incorrect.');}
+  failures.delete(key);return json(response,200,signIn(request,response,user));
  }
- if(route==='/api/auth/logout'&&method==='POST'){const hash=sessionHash(request);if(hash)store.removeSession(hash);response.setHeader('Set-Cookie',`${sessionCookie}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`);return json(response,200,{signedOut:true});}
+ if(route==='/api/auth/refresh'&&method==='POST'){
+  rate(request,'refresh',120,60*60*1000);
+  const renewed=refreshSession(request,response);
+  if(!renewed)throw new HttpError(401,'Your session has expired or was revoked. Please log in.');
+  return json(response,200,renewed);
+ }
+ if(route==='/api/auth/logout'&&method==='POST'){revokeRequest(request);clearAuthCookies(response);return json(response,200,{signedOut:true});}
  if(route==='/api/auth/reset/request'&&method==='POST'){
   rate(request,'reset',5,60*60*1000);
   if(!mailConfigured)throw new HttpError(503,'Email verification is unavailable. Please contact the administrator.');
@@ -50,23 +61,28 @@ async function api(request:IncomingMessage,response:ServerResponse,url:URL){
  if(route==='/api/auth/reset/confirm'&&method==='POST'){
   rate(request,'reset-confirm',10,60*60*1000);
   const input=z.object({username:usernameSchema,code:z.string().regex(/^\d{6}$/),newPassword:z.string().min(8).max(128)}).strict().parse(await readJson(request)),user=store.findUser(input.username);
-  if(!user||!consumeCode(user,'reset','reset',input.code))throw new HttpError(400,'This verification code is invalid, expired, or already used.');
-  store.changePassword(user.id,await hashPassword(input.newPassword));changed(user.id);return json(response,200,{passwordChanged:true});
+  if(!user)throw new HttpError(400,'This verification code is invalid, expired, or already used.');
+  const passwordHash=await hashPassword(input.newPassword);
+  if(!consumeCode(user,'reset','reset',input.code))throw new HttpError(400,'This verification code is invalid, expired, or already used.');
+  store.changePassword(user.id,passwordHash);clearAuthCookies(response);changed(user.id);return json(response,200,{passwordChanged:true});
  }
- const user=requireUser(request);
+ const session=requireSession(request),user=session.user;
  if(route==='/api/admin/stream'&&method==='GET')return stream(response,user.id,()=>!!currentUser(request));
  if(route==='/api/auth/password/code'&&method==='POST'){
   rate(request,'change-code',5,60*60*1000);
   const input=z.object({currentPassword:z.string().min(1).max(128)}).strict().parse(await readJson(request));
   if(!await verifyPassword(input.currentPassword,user.password_hash))throw new HttpError(400,'Your current password is incorrect.');
-  try{await issueCode(user,'change',sessionHash(request)!);}catch(error){throw new HttpError(400,(error as Error).message);}
+  try{await issueCode(user,'change',session.id);}catch(error){throw new HttpError(400,(error as Error).message);}
   return json(response,200,{message:'A six-digit verification code was emailed to your admin recovery address.'});
  }
  if(route==='/api/auth/password'&&method==='PATCH'){
   const input=z.object({currentPassword:z.string().min(1).max(128),newPassword:z.string().min(8,'Use at least 8 characters.').max(128),code:z.string().regex(/^\d{6}$/,'Enter the six-digit verification code.')}).strict().parse(await readJson(request));
   if(!await verifyPassword(input.currentPassword,user.password_hash))throw new HttpError(400,'Your current password is incorrect.');
-  if(!consumeCode(user,'change',sessionHash(request)!,input.code))throw new HttpError(400,'This verification code is invalid, expired, or already used.');
-  store.changePassword(user.id,await hashPassword(input.newPassword),sessionHash(request)!);changed(user.id);return json(response,200,{passwordChanged:true});
+  const passwordHash=await hashPassword(input.newPassword);
+  if(currentSession(request)?.id!==session.id)throw new HttpError(401,'Your session has expired. Please sign in again.');
+  if(!consumeCode(user,'change',session.id,input.code))throw new HttpError(400,'This verification code is invalid, expired, or already used.');
+  store.changePassword(user.id,passwordHash);
+  const renewed=signIn(request,response,user);changed(user.id);return json(response,200,{passwordChanged:true,...renewed});
  }
  if(route==='/api/admin'&&method==='GET')return json(response,200,{...store.getPortal(user.id),mail:mailSummary(user.id),recoveryEmail:user.recovery_email||process.env.ADMIN_RECOVERY_EMAIL||''});
  const categoryRoute=route.match(/^\/api\/categories\/([^/]+)$/);

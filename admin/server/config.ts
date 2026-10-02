@@ -10,5 +10,10 @@ if(!Number.isInteger(publicPort)||publicPort<1024||publicPort>65535||!Number.isI
 export const publicOrigins=new Set([`http://localhost:${publicPort}`,`http://127.0.0.1:${publicPort}`,`http://localhost:${publicUiPort}`,`http://127.0.0.1:${publicUiPort}`]);
 if(!Number.isInteger(port)||port<1024||port>65535||!Number.isInteger(uiPort)||uiPort<1024||uiPort>65535)throw new Error('Set valid ADMIN_PORT and ADMIN_UI_PORT values between 1024 and 65535.');
 export const allowedOrigins=new Set([`http://localhost:${port}`,`http://127.0.0.1:${port}`,`http://localhost:${uiPort}`,`http://127.0.0.1:${uiPort}`]);
-export const sessionCookie='ecec_local_admin';
-export const sessionLifetime=8*60*60*1000;
+export const sessionCookie='ecec_admin_access';
+export const refreshCookie='ecec_admin_refresh';
+export const accessTokenLifetime=Number(process.env.ADMIN_ACCESS_TOKEN_MINUTES||15)*60*1000;
+export const sessionLifetime=Number(process.env.ADMIN_REFRESH_TOKEN_DAYS||7)*24*60*60*1000;
+export const secureCookies=process.env.ADMIN_SECURE_COOKIES==='true';
+if(!Number.isFinite(accessTokenLifetime)||accessTokenLifetime<60000||accessTokenLifetime>60*60*1000)throw new Error('Set ADMIN_ACCESS_TOKEN_MINUTES between 1 and 60.');
+if(!Number.isFinite(sessionLifetime)||sessionLifetime<=accessTokenLifetime||sessionLifetime>30*24*60*60*1000)throw new Error('Set ADMIN_REFRESH_TOKEN_DAYS longer than the access token duration and no more than 30 days.');

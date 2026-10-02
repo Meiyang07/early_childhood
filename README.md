@@ -3,7 +3,10 @@
 Early Childhood Montessori's website and admin panel run together on your computer. The admin manages school content, admissions, and parent reviews. Published changes update the website while it is open.
 
 **Repository:** `early_childhood`  
-**Last updated:** 1 October 2026
+**Version:** `2.1.2`  
+**Last updated:** 2 October 2026
+
+For a short installation checklist, open [START_HERE.md](START_HERE.md). This full project includes the website, admin server, access/refresh-token code, bundled images, and the server editor configuration.
 
 ## Quick start
 
@@ -20,6 +23,8 @@ npm run local
 
 5. Wait for installation and building to finish, then open:
 
+The Terminal banner starts with **Early Childhood 2.1.2** so you can confirm that you opened this updated folder. On the first run, the launcher creates `admin/.env` from the included example if it is missing. An existing `.env` is preserved. The initial values use 15-minute access tokens and a seven-day maximum login session; email settings remain blank until you configure them.
+
 | App | Address | Purpose |
 | --- | --- | --- |
 | School website | http://localhost:4174 | Browse school information, apply, submit reviews, and contact the school. |
@@ -29,8 +34,8 @@ On a **fresh installation**, sign in with:
 
 | Field | Starter value |
 | --- | --- |
-| Username | `admin` |
-| Password | `EarlyChildhood@2026` |
+| Username | `Admin` |
+| Password | `Admin@123` |
 
 The admin opens directly to **Log in**. There is no Create account page. The starter account is assigned in `admin/server/initial-admin.ts` and created automatically before the server opens.
 
@@ -111,11 +116,49 @@ Run the main commands from this folder. The launcher installs dependencies from 
 
 Open http://localhost:4175, enter your username and password, and select **Log in**. Use the eye button to show or hide the password while typing.
 
-On a fresh data folder, the code-defined credentials are `admin` / `EarlyChildhood@2026`. On an existing data folder, use the account already saved there. There are no registration or account-creation controls.
+On a fresh data folder, the code-defined credentials are `Admin` / `Admin@123`. On an existing data folder, use the account already saved there. There are no registration or account-creation controls.
 
-Use **Log out** at the bottom of the sidebar when finished. **Admin display name** in Settings changes the greeting and account label, while keeping the login username unchanged.
+If the entrance says **Signed in as**, your browser still has a valid session. Select **Open admin panel** to continue, or **Log out** on that screen to show the username and password fields again. You can also use **Log out** at the bottom of the dashboard sidebar when finished. **Admin display name** in Settings changes the greeting and account label, while keeping the login username unchanged.
 
 The app provides one local admin account. Adding people under Staff & Teachers creates public staff profiles, not additional login accounts.
+
+### Access and refresh tokens
+
+Login issues two opaque tokens in HttpOnly, SameSite=Strict cookies. The access token authorizes admin API requests for 15 minutes. The refresh token renews access automatically within a seven-day session. Token hashes are kept in SQLite; raw tokens are not returned in JSON or placed in browser storage.
+
+Each refresh replaces the refresh token. Reusing an already-consumed refresh token revokes that session. The client coordinates refresh requests within a tab and, in browsers with the Web Locks API, across tabs. Forms, uploads, and the admin event stream use automatic renewal. Public website requests do not use admin tokens.
+
+The seven-day limit is counted from login and is not extended by refreshing. When it ends, sign in again. Logout revokes that browser's whole token session. Password resets revoke all token sessions; a verified password change replaces the current session and revokes the others. Password verification is bound to the stable session ID so access-token rotation does not invalidate its code.
+
+After expiry, the next protected request or live-session check returns the admin to login. An idle entrance page may continue showing its previous account label until it next checks the session; expired tokens cannot authorize admin requests.
+
+The implementation is in these files:
+
+| File | Purpose |
+| --- | --- |
+| `admin/server/auth.ts` | Token creation, cookie handling, renewal, and logout. |
+| `admin/server/store.ts` | Hashed tokens, session expiry, rotation, and revocation. |
+| `admin/server/index.ts` | Login, refresh, logout, and protected API routes. |
+| `admin/src/auth.ts` | Automatic renewal, request retry, and coordination across tabs. |
+| `admin/server/config.ts` | Cookie names, durations, and configuration validation. |
+
+These files are already connected to the admin forms, uploads, and live updates. Tokens are generated on login; there is no fixed access or refresh token to paste into `.env`.
+
+To change the durations, add or edit these in `admin/.env`:
+
+```env
+ADMIN_ACCESS_TOKEN_MINUTES=15
+ADMIN_REFRESH_TOKEN_DAYS=7
+ADMIN_SECURE_COOKIES=false
+```
+
+The defaults are defined in `admin/server/config.ts`. Access duration accepts 1–60 minutes. The refresh duration must be longer than access duration, and cannot exceed 30 days. Save, restart `npm run local`, log out, and sign in to receive tokens with the new durations. Preserve other existing `.env` values.
+
+For a three-day maximum session, set `ADMIN_REFRESH_TOKEN_DAYS=3`. The `.env` file is inside `admin/`, next to `package.json`. The root launch commands create it when missing; after editing it, restart and sign in again.
+
+This package serves local HTTP; `ADMIN_SECURE_COOKIES=false` supports that setup. Set it to `true` when serving an HTTPS installation. Use a current browser for cross-tab locking. Without Web Locks, only requests within the same tab are coordinated; simultaneous refreshes from separate tabs may require a fresh login.
+
+The token upgrade runs a database migration and requires one new login. Existing usernames, passwords, school records, and uploads remain saved. Back up before upgrading; an older server cannot open the upgraded database.
 
 ### Configure a new installation's credentials
 
@@ -510,9 +553,11 @@ If you set `ADMIN_DATA_DIR`, preserve that configured folder instead. Relative p
 5. From the new main folder, run `npm run local`.
 6. Sign in with your existing credentials and check staff, gallery, admissions, and settings.
 
-Supported database upgrades run automatically. Keep the backup until the updated version is checked. Dependencies and build folders are regenerated and do not need to be copied.
+Supported database upgrades run automatically. The access/refresh-token version uses schema 4 and retires legacy session cookies, so sign in again after installing it. Keep the backup until the updated version is checked. Dependencies and build folders are regenerated and do not need to be copied.
 
 The distributed ZIP includes source and bundled assets, but excludes private data and `.env`. A fresh data folder receives the starter account; a restored data folder keeps its existing account.
+
+The launcher creates a default `.env` only when one is missing. Copy your old configuration before starting the updated project to keep your email settings and custom data path.
 
 ### Restore
 
@@ -526,6 +571,8 @@ Do not run two project copies against the same data folder while updating or res
 | --- | --- |
 | `npm` or `node` not found | Install Node.js and reopen Terminal. Check both version commands. |
 | `ENOENT` or missing `package.json` | Run from the main project folder containing `package.json`. |
+| Token files cannot be found | Open the folder extracted from this updated full ZIP. Both `admin/server/auth.ts` and `admin/src/auth.ts` must be present. Check for the 2.1.2 Terminal banner. |
+| VS Code says `Cannot find name 'process'` | Run `npm run setup`, then use Command Palette → TypeScript: Restart TS Server. The included `admin/server/tsconfig.json` selects the Node server configuration. |
 | Unsupported Node.js or `node:sqlite` error | Use Node.js 24, or at least 22.13.0. |
 | Installation fails | Check internet access and the Terminal error. Keep the lockfiles and retry. |
 | Browser cannot connect | Confirm the server is running and use the printed address. Restart if it stopped. |
@@ -640,3 +687,11 @@ GitHub stores the source. This connected application needs a running Node.js ser
 - [GitHub: cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 - [Admin quick reference](admin/README.md)
 - [Website quick reference](website/README.md)
+
+## Styling and image fitting
+
+All website styles are in `website/src/styles.css`. All admin styles, local font declarations, and component variants are in `admin/src/styles.css`. Each app imports only its `styles.css`; separate animation, article, connection, and image fitting stylesheets are merged into it.
+
+Photo cards, profile frames, article headers, and upload previews use proportional image fitting. Photos fill their frames without distortion, which can crop their edges when the frame and photo have different shapes. Logos and the full gallery viewer use `contain` so the whole image remains visible. These styles apply automatically to new admin uploads; uploaded originals are preserved.
+
+The article dialog opens above the animated page. Opening it locks page scrolling; its photo and close button remain fixed while only the article text scrolls. Close it with the close button, Escape, or the backdrop.

@@ -5,7 +5,7 @@ import EnrollmentPage from './EnrollmentPage';
 import {useSchool,submitForm} from './SchoolContext';
 import ReviewsPage from './ReviewsPage';
 import { useSiteMotion } from './useSiteMotion';
-
+import { createPortal } from 'react-dom';
 const asset = (name: string) => name.startsWith('/')?name:`/assets/${name}`;
 
 const navItems = [
@@ -34,7 +34,6 @@ function SiteLink({ to, children, className = '', onClick, ...rest }: {
   }
   return <a href={to} className={className} onClick={handleClick} {...rest}>{children}</a>;
 }
-
 type IconName = 'pin' | 'phone' | 'clock' | 'mail' | 'heart' | 'users' | 'sparkle' | 'book' | 'award' | 'timer' | 'calendar' | 'file' | 'check' | 'leaf' | 'arrow' | 'send' | 'menu' | 'close' | 'sun';
 
 function Icon({ name, size = 20, className = '' }: { name: IconName; size?: number; className?: string }) {
@@ -72,11 +71,15 @@ function Brand({ light = false }: { light?: boolean }) {
 
 function Header({ pathname }: { pathname: string }) {
   const {schoolDetails}=useSchool();
+  const headerMap = schoolMap;
   const [open, setOpen] = useState(false);
   useEffect(() => { setOpen(false); }, [pathname]);
   return <header className="site-header">
     <div className="topbar"><div className="container topbar-inner">
-      <div className="topbar-left"><span><Icon name="pin" size={15}/> {schoolDetails.address}</span><a href={`mailto:${schoolDetails.email}`}>{schoolDetails.email}</a></div>
+      <div className="topbar-left">
+        <span><a href={headerMap} target="_blank" rel="noopener noreferrer" aria-label="View Early Childhood Montessori on Google Maps (opens in a new tab)"><Icon name="pin" size={15}/> {schoolDetails.address}</a></span>
+        <a href={`mailto:${schoolDetails.email}`}><Icon name="mail" size={16}/> {schoolDetails.email}</a>
+      </div>
       <div className="topbar-right"><a href={schoolDetails.phoneLink}><Icon name="phone" size={16}/> {schoolDetails.phone}</a><span><Icon name="clock" size={16}/> {schoolDetails.compactHours}</span></div>
     </div></div>
     <div className="nav-shell"><div className="container nav-inner">
@@ -163,10 +166,10 @@ function HomePage() {
     <section className="home-hero"><div className="container hero-content"><h1>Nurturing Curious Minds</h1><p>Discover the Montessori difference for your child's early year</p>
       <div className="hero-actions"><SiteLink to="/contact?reason=School%20visit#message" className="button hero-primary">Schedule a Visit</SiteLink><SiteLink to="/programs" className="button hero-secondary">Our Programs</SiteLink></div>
     </div></section>
-    <section className="quote-section"><div className="container"><h2>Early Childhood Montessori &amp; Academy</h2>
+    <section className="quote-section"><div className="container"><h2>Early Childhood Montessori & Academy</h2>
       <div className="quote-row"><div><p className="quote-highlight">“Radiance on undiscovered movement”</p>
         <blockquote>"ECEC Montessori gives, your child a strong basis in the most formative and important years for developing into a responsible happy and fulfilled person."</blockquote>
-        <strong>• &nbsp;Dr.Maria Montessori (1870 AD - 1952 AD)</strong>
+        <strong>•  Dr.Maria Montessori (1870 AD - 1952 AD)</strong>
       </div><img src={asset('montessori-portrait.png')} alt="Portrait of Maria Montessori" /></div>
     </div></section>
     <section className="welcome-section"><div className="container"><h2>Welcome to Early Childhood Montessori</h2>
@@ -183,7 +186,7 @@ function HomePage() {
     <section className="testimonials"><div className="container"><div className="section-heading"><h2>What Parents Say</h2><p>Hear from the families who've experienced the Montessori difference</p></div>
       <div className="testimonial-grid">{records.filter(r=>r.kind==='reviews').slice(0,3).map(review=><blockquote key={review.id}><span aria-label={`${review.data.rating} out of 5 stars`}>{'★'.repeat(Number(review.data.rating))}</span><p>{review.data.body}</p><footer><strong>{review.name}</strong><span>Parent</span></footer></blockquote>)}</div>
       {!records.some(r=>r.kind==='reviews')&&<p className="public-empty">Parent experiences will appear here after the school approves them.</p>}
-      <SiteLink to="/reviews" className="text-link">Read reviews &amp; share your experience →</SiteLink>
+      <SiteLink to="/reviews" className="text-link">Read reviews & share your experience →</SiteLink>
     </div></section>
     <Journey secondary="Admission Info" />
   </>;
@@ -191,9 +194,9 @@ function HomePage() {
 
 function AboutPage() {
   return <><section className="about-section"><div className="container">
-    <div className="section-heading about-heading"><h1>About Early Childhood Montessori &amp; Academy</h1><p>Dedicated to providing quality early childhood education in Ranipauwa,<br/> Pokhara-11 since 2005.</p><span className="heading-line"/></div>
+    <div className="section-heading about-heading"><h1>About Early Childhood Montessori & Academy</h1><p>Dedicated to providing quality early childhood education in Ranipauwa,<br/> Pokhara-11 since 2005.</p><span className="heading-line"/></div>
     <div className="about-intro"><img src={asset('school-campus.jpg')} alt="Early Childhood Montessori school building and courtyard" />
-      <div><p>Early Childhood Montessori &amp; Academy is dedicated to providing quality early childhood education. We believe that children learn best through exploration, creativity, and meaningful experiences.</p>
+      <div><p>Early Childhood Montessori & Academy is dedicated to providing quality early childhood education. We believe that children learn best through exploration, creativity, and meaningful experiences.</p>
         <p>Our Montessori-inspired curriculum encourages children to become independent thinkers while developing respect, responsibility, and compassion. We strive to create a nurturing environment where every child feels loved, respected, and inspired to reach their full potential.</p>
         <p>Our child-friendly educational approach (<strong>बालमैत्री वातावरण शिक्षा</strong>) helps children develop academically, socially, emotionally, and physically through hands-on experiences.</p>
       </div></div>
@@ -253,7 +256,7 @@ function AdmissionsPage() {
       <div className="step-grid">{steps.map((step, index) => <article key={step.title}><span className="step-icon"><Icon name={step.icon} size={25}/></span><strong>{index + 1}</strong><h3>{step.title}</h3><p>{step.text}</p></article>)}</div>
       <SiteLink className="button button-blue application-button" to="/enroll">Start Your Application</SiteLink>
     </div></section>
-    <section className="tuition-section"><div className="narrow"><div className="section-heading"><h2>Tuition &amp; Fees</h2><p>Transparent pricing with flexible payment options</p></div>
+    <section className="tuition-section"><div className="narrow"><div className="section-heading"><h2>Tuition & Fees</h2><p>Transparent pricing with flexible payment options</p></div>
       <div className="tuition-table-wrap"><table><thead><tr><th>Program</th><th>Monthly Tuition</th></tr></thead><tbody>
         {tuitionFees.map(fee => <tr key={fee.program}><td>{fee.program}</td><td>{fee.monthly}/month</td></tr>)}
       </tbody></table></div>
@@ -299,12 +302,118 @@ function BlogPage() {
   const posts=records.filter(r=>r.kind==='blog').map((r,i)=>({id:r.id,title:r.name,image:r.data.imagePath||'/assets/school-campus.jpg',tag:r.data.category||'School News',date:r.data.date?new Intl.DateTimeFormat('en',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(r.data.date+'T00:00:00Z')):'',excerpt:r.data.excerpt,body:r.data.body,author:r.data.author,color:['blue','green','yellow','orange','purple','teal'][i%6]}));
   const [selectedId,setSelected]=useState<string|null>(null);
   const selected=posts.find(p=>p.id===selectedId);
+  const isArticleOpen = Boolean(selected);
+  const articleDialog = useRef<HTMLElement>(null);
+  const articleContent = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isArticleOpen) return;
+    const body = document.body;
+    const root = document.documentElement;
+    const scrollY = window.scrollY;
+    const previousFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const previousRootOverflow = root.style.overflow;
+    const previousBodyStyles = {
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    root.style.overflow = 'hidden';
+    Object.assign(body.style, {
+      position: 'fixed',
+      top: `-${scrollY}px`,
+      width: '100%',
+      overflow: 'hidden',
+    });
+    articleContent.current?.focus({ preventScroll: true });
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setSelected(null);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const controls = articleDialog.current?.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), a[href], [tabindex="0"]'
+      );
+      if (!controls?.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      const focusOutside = !articleDialog.current?.contains(document.activeElement);
+      if (event.shiftKey && (document.activeElement === first || focusOutside)) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!event.shiftKey && (document.activeElement === last || focusOutside)) {
+        event.preventDefault();
+        first.focus({ preventScroll: true });
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      Object.assign(body.style, previousBodyStyles);
+      root.style.overflow = previousRootOverflow;
+      window.scrollTo({ top: scrollY, behavior: 'instant' });
+      if (previousFocus?.isConnected) {
+        previousFocus.focus({ preventScroll: true });
+      }
+    };
+  }, [isArticleOpen]);
   return <><PageBanner title="Blog & Insights" description="Thoughtful articles, expert tips, and heartwarming stories from our Montessori educators and child development team." />
     <section className="blog-section"><div className="container blog-grid">{posts.map(post => <article className="blog-card" key={post.title}>
       <div className="blog-image"><img src={asset(post.image)} alt=""/><span className={`post-tag ${post.color}`}>{post.tag}</span></div>
       <div className="blog-content"><small><Icon name="clock" size={15}/> {post.date}</small><h2>{post.title}</h2><p>{post.excerpt}</p><button type="button" className="read-link" onClick={() => setSelected(post.id)}>Read Article <Icon name="arrow" size={17}/></button></div>
     </article>)}</div></section>
-    {selected && <div className="modal-backdrop" role="presentation" onClick={() => setSelected(null)}><article role="dialog" aria-modal="true" aria-label={selected.title} className="article-dialog" onClick={e => e.stopPropagation()}><button type="button" className="modal-close" aria-label="Close article" onClick={() => setSelected(null)}><Icon name="close"/></button><img src={asset(selected.image)} alt=""/><div><small>{selected.tag} · {selected.date}</small><h2>{selected.title}</h2><p className="article-author">By {selected.author}</p><p className="article-body">{selected.body}</p><SiteLink to="/contact?reason=School%20visit#message" className="button button-blue" onClick={() => setSelected(null)}>Visit our school</SiteLink></div></article></div>}
+    {selected && createPortal(
+      <div
+        className="modal-backdrop article-backdrop"
+        role="presentation"
+        onClick={event => {
+          if (event.target === event.currentTarget) setSelected(null);
+        }}
+      >
+        <article
+          ref={articleDialog}
+          role="dialog"
+          aria-modal="true"
+          aria-label={selected.title}
+          className="article-dialog"
+          onClick={event => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="modal-close"
+            aria-label="Close article"
+            onClick={() => setSelected(null)}
+          >
+            <Icon name="close" />
+          </button>
+          <img src={asset(selected.image)} alt="" />
+          <div
+            ref={articleContent}
+            className="article-scroll"
+            tabIndex={0}
+            role="region"
+            aria-label="Article content"
+          >
+            <small>{selected.tag} · {selected.date}</small>
+            <h2>{selected.title}</h2>
+            <p className="article-author">By {selected.author}</p>
+            <p className="article-body">{selected.body}</p>
+            <SiteLink
+              to="/contact?reason=School%20visit#message"
+              className="button button-blue"
+              onClick={() => setSelected(null)}
+            >
+              Visit our school
+            </SiteLink>
+          </div>
+        </article>
+      </div>,
+      document.body
+    )}
     <Journey />
   </>;
 }
@@ -357,5 +466,4 @@ function App() {
   };
   return <><div className="reading-progress" aria-hidden="true"><span /></div><Header pathname={pathname}/><main className="page-content" key={pathname}>{page[pathname] || <section className="not-found"><h1>Page not found</h1><SiteLink to="/" className="button button-blue">Return home</SiteLink></section>}</main><Partners /><Footer /></>;
 }
-
 export default App;

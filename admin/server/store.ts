@@ -33,7 +33,14 @@ PRAGMA user_version=2; COMMIT;`);}
 if(version<3){db.exec(`BEGIN IMMEDIATE;
 CREATE TABLE admin_categories(owner_id TEXT NOT NULL REFERENCES admin_users(id),kind TEXT NOT NULL,name TEXT NOT NULL,normalized_name TEXT NOT NULL,PRIMARY KEY(owner_id,kind,normalized_name));
 PRAGMA user_version=3; COMMIT;`);}
-if(version>3)throw new Error('This data folder was created by a newer version of the admin project.');
+if(version<4){db.exec(`BEGIN IMMEDIATE;
+CREATE TABLE auth_sessions(id TEXT PRIMARY KEY,owner_id TEXT NOT NULL REFERENCES admin_users(id),expires_at INTEGER NOT NULL,revoked_at INTEGER);
+CREATE TABLE auth_tokens(token_hash TEXT PRIMARY KEY,session_id TEXT NOT NULL REFERENCES auth_sessions(id) ON DELETE CASCADE,kind TEXT NOT NULL CHECK(kind IN ('access','refresh')),expires_at INTEGER NOT NULL,used_at INTEGER);
+CREATE INDEX auth_tokens_session ON auth_tokens(session_id);
+CREATE INDEX auth_sessions_owner ON auth_sessions(owner_id);
+DELETE FROM admin_sessions;
+PRAGMA user_version=4; COMMIT;`);}
+if(version>4)throw new Error('This data folder was created by a newer version of the admin project.');
 db.prepare('DELETE FROM admin_sessions WHERE expires_at<?').run(Date.now());
 function transaction<T>(action:()=>T):T{db.exec('BEGIN IMMEDIATE');try{const result=action();db.exec('COMMIT');return result;}catch(error){db.exec('ROLLBACK');throw error;}}
 export function setupNeeded(){return Number((db.prepare("SELECT COUNT(*) AS count FROM admin_users WHERE username<>''").get() as {count:number}).count)===0;}
@@ -41,10 +48,37 @@ export const normalizeUsername=(username:string)=>username.trim().normalize('NFK
 export function findUser(username:string){const normalized=normalizeUsername(username);if(!normalized)return undefined;return db.prepare('SELECT id,username,password_hash,recovery_email FROM admin_users WHERE username=?').get(normalized) as User|undefined;}
 export function schoolOwner(){let row=db.prepare('SELECT id FROM admin_users LIMIT 1').get() as {id:string}|undefined;if(!row){const id=randomUUID();db.prepare("INSERT INTO admin_users(id,username,password_hash) VALUES (?,'',?)").run(id,randomUUID());row={id};}getPortal(row.id);return row.id;}
 export function createUser(username:string,passwordHash:string,email:string){return transaction(()=>{if(!setupNeeded())throw new Error('The admin account is already configured. Please log in.');const existing=db.prepare("SELECT id FROM admin_users WHERE username=''").get() as {id:string}|undefined;const id=existing?.id??randomUUID(),normalized=normalizeUsername(username);if(existing)db.prepare('UPDATE admin_users SET username=?,password_hash=?,recovery_email=? WHERE id=?').run(normalized,passwordHash,email,id);else db.prepare('INSERT INTO admin_users(id,username,password_hash,recovery_email) VALUES (?,?,?,?)').run(id,normalized,passwordHash,email);return {id,username:normalized,password_hash:passwordHash,recovery_email:email};});}
-export function changePassword(owner:string,hash:string,currentTokenHash?:string){transaction(()=>{db.prepare('UPDATE admin_users SET password_hash=? WHERE id=?').run(hash,owner);if(currentTokenHash)db.prepare('DELETE FROM admin_sessions WHERE owner_id=? AND token_hash<>?').run(owner,currentTokenHash);else db.prepare('DELETE FROM admin_sessions WHERE owner_id=?').run(owner);});}
-export function saveSession(tokenHash:string,owner:string,expires:number){db.prepare('DELETE FROM admin_sessions WHERE expires_at<?').run(Date.now());db.prepare('INSERT INTO admin_sessions(token_hash,owner_id,expires_at) VALUES (?,?,?)').run(tokenHash,owner,expires);}
-export function userForSession(tokenHash:string){return db.prepare('SELECT u.id,u.username,u.password_hash,u.recovery_email FROM admin_sessions s JOIN admin_users u ON u.id=s.owner_id WHERE s.token_hash=? AND s.expires_at>?').get(tokenHash,Date.now()) as User|undefined;}
-export function removeSession(tokenHash:string){db.prepare('DELETE FROM admin_sessions WHERE token_hash=?').run(tokenHash);}
+export function changePassword(owner:string,hash:string){transaction(()=>{
+ db.prepare('UPDATE admin_users SET password_hash=? WHERE id=?').run(hash,owner);
+ db.prepare('UPDATE auth_sessions SET revoked_at=? WHERE owner_id=? AND revoked_at IS NULL').run(Date.now(),owner);
+ db.prepare('DELETE FROM admin_sessions WHERE owner_id=?').run(owner);
+ db.prepare('DELETE FROM password_codes WHERE owner_id=?').run(owner);
+});}
+export type AuthSession={id:string;user:User;expiresAt:number;accessExpiresAt:number};
+type AuthRow=User&{session_id:string;session_expires:number;token_expires:number;used_at:number|null;revoked_at:number|null};
+function authRow(hash:string,kind:'access'|'refresh'){
+ return db.prepare('SELECT u.id,u.username,u.password_hash,u.recovery_email,s.id session_id,s.expires_at session_expires,s.revoked_at,t.expires_at token_expires,t.used_at FROM auth_tokens t JOIN auth_sessions s ON s.id=t.session_id JOIN admin_users u ON u.id=s.owner_id WHERE t.token_hash=? AND t.kind=?').get(hash,kind) as AuthRow|undefined;
+}
+function sessionFrom(row:AuthRow,accessExpiresAt=row.token_expires):AuthSession{return {id:row.session_id,user:{id:row.id,username:row.username,password_hash:row.password_hash,recovery_email:row.recovery_email},expiresAt:row.session_expires,accessExpiresAt};}
+export function authSession(hash:string){const row=authRow(hash,'access'),now=Date.now();return row&&row.revoked_at===null&&row.used_at===null&&row.token_expires>now&&row.session_expires>now?sessionFrom(row):undefined;}
+function saveToken(hash:string,session:string,kind:'access'|'refresh',expires:number){db.prepare('INSERT INTO auth_tokens(token_hash,session_id,kind,expires_at) VALUES (?,?,?,?)').run(hash,session,kind,expires);}
+export function createAuthSession(user:User,accessHash:string,refreshHash:string,accessExpiresAt:number,expiresAt:number):AuthSession{return transaction(()=>{
+ db.prepare('DELETE FROM auth_sessions WHERE expires_at<=?').run(Date.now());
+ const id=randomUUID();db.prepare('INSERT INTO auth_sessions(id,owner_id,expires_at) VALUES (?,?,?)').run(id,user.id,expiresAt);
+ saveToken(accessHash,id,'access',accessExpiresAt);saveToken(refreshHash,id,'refresh',expiresAt);
+ return {id,user,expiresAt,accessExpiresAt};
+});}
+export function rotateAuthSession(refreshHash:string,accessHash:string,nextRefreshHash:string,accessLifetime:number):AuthSession|undefined{return transaction(()=>{
+ const row=authRow(refreshHash,'refresh'),now=Date.now();
+ if(!row||row.revoked_at!==null||row.session_expires<=now||row.token_expires<=now)return undefined;
+ if(row.used_at!==null){db.prepare('UPDATE auth_sessions SET revoked_at=? WHERE id=?').run(now,row.session_id);return undefined;}
+ db.prepare('UPDATE auth_tokens SET used_at=? WHERE token_hash=?').run(now,refreshHash);
+ db.prepare("DELETE FROM auth_tokens WHERE session_id=? AND kind='access' AND expires_at<=?").run(row.session_id,now);
+ const accessExpiresAt=Math.min(now+accessLifetime,row.session_expires);
+ saveToken(accessHash,row.session_id,'access',accessExpiresAt);saveToken(nextRefreshHash,row.session_id,'refresh',row.session_expires);
+ return sessionFrom(row,accessExpiresAt);
+});}
+export function revokeAuthTokens(hashes:string[]){transaction(()=>{for(const hash of hashes)db.prepare('UPDATE auth_sessions SET revoked_at=? WHERE id IN (SELECT session_id FROM auth_tokens WHERE token_hash=?) AND revoked_at IS NULL').run(Date.now(),hash);});}
 function asRecord(row:Row):AdminRecord{return {id:row.id,kind:row.kind,name:row.name,status:row.status,data:JSON.parse(row.data),revision:row.revision,createdAt:row.created_at,updatedAt:row.updated_at};}
 export function getPortal(owner:string):PortalData{
  let settings=db.prepare('SELECT data,revision FROM admin_settings WHERE owner_id=?').get(owner) as {data:string;revision:number}|undefined;

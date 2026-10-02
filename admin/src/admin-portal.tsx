@@ -2,6 +2,7 @@
 import {subscribeLive} from '../../shared/live';
 import { useEffect,useMemo,useState,type FormEvent,type CSSProperties } from 'react';
 import {PasswordForm} from './AccountForms';
+import {authFetch,refreshAccess} from './auth';
 import { Link,useRouter } from './navigation';
 import { UserRound,LayoutGrid,ClipboardList,Users,Star,BookOpen,Images,CalendarDays,FileText,Settings as SettingsIcon,LogOut,Plus,Search,Pencil,Trash2,Check,RefreshCw,ShieldCheck,Clock,Inbox } from 'lucide-react';
 import { SidebarProvider,Sidebar,SidebarHeader,SidebarContent,SidebarFooter,SidebarMenu,SidebarMenuItem,SidebarMenuButton,SidebarInset,SidebarTrigger,useSidebar } from '@/components/ui/sidebar';
@@ -23,7 +24,7 @@ const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Katmandu',year:'
 const timeLabel=(value:string)=>new Intl.DateTimeFormat('en',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'UTC'}).format(new Date(`2000-01-01T${value}:00Z`));
 const titleCase=(text:string)=>text.charAt(0).toUpperCase()+text.slice(1);
 async function requestJson<T=unknown>(url:string,method='GET',body?:unknown):Promise<T>{
-  const response=await fetch(url,{method,headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined,cache:'no-store'});
+  const response=await authFetch(url,{method,headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined});
   let data:unknown;try{data=await response.json();}catch{throw new Error('Your session may have expired. Reload and sign in again.');}
   if(response.status===401)window.dispatchEvent(new Event('admin-session-expired'));
   if(!response.ok)throw new Error((data as {error?:string})?.error??'Could not save your changes.');
@@ -53,7 +54,7 @@ export default function AdminPortal({section,initial,account,onLogout}:{section:
   useEffect(()=>{
     let stopped=false,running=false,queued=false;
     async function reload(){if(running){queued=true;return;}running=true;try{const value=await requestJson<PortalData>('/api/admin');if(!stopped)setData(prev=>({...value,categories:mergeCategories(prev.categories,value.categories)}));}catch{}finally{running=false;if(queued&&!stopped){queued=false;void reload();}}}
-    const stopLive=subscribeLive('/api/admin/stream',reload,setLive,()=>window.dispatchEvent(new Event('admin-session-expired')));
+    const stopLive=subscribeLive('/api/admin/stream',reload,setLive,()=>window.dispatchEvent(new Event('admin-session-expired')),refreshAccess);
     const timer=setInterval(reload,30000);window.addEventListener('focus',reload);
     return()=>{stopped=true;stopLive();clearInterval(timer);window.removeEventListener('focus',reload);};
   },[]);
@@ -144,7 +145,7 @@ function RecordEditor({editor,categories,onCreateCategory,onClose,onSave}:{edito
   async function submit(event:FormEvent){event.preventDefault();if(categoryCreating)return;setError('');setSaving(true);try{
     const data={...values};
     if(kind==='gallery'&&record&&normalizeCategory(data.category)!==normalizeCategory(record.data.category))data.categories=[data.category,...recordCategories(record).filter(name=>normalizeCategory(name)!==normalizeCategory(record.data.category)&&normalizeCategory(name)!==normalizeCategory(data.category))].join(',');
-    if(file){const response=await fetch('/api/uploads',{method:'POST',headers:{'Content-Type':file.type,'X-File-Name':encodeURIComponent(file.name)},body:file});const result=await response.json() as {error?:string;imagePath:string};if(!response.ok)throw new Error(result.error??'Could not upload the photo.');data.imagePath=result.imagePath;setValues(data);setFile(null);setPreview(result.imagePath);}
+    if(file){const response=await authFetch('/api/uploads',{method:'POST',headers:{'Content-Type':file.type,'X-File-Name':encodeURIComponent(file.name)},body:file});const result=await response.json() as {error?:string;imagePath:string};if(!response.ok)throw new Error(result.error??'Could not upload the photo.');data.imagePath=result.imagePath;setValues(data);setFile(null);setPreview(result.imagePath);}
     validateRecord(kind,{name,status,data},categories);
     await onSave(kind,{name,status,data},record);toast.success(record?'Changes saved':`${titleCase(definition.singular)} added`);onClose();
   }catch(e){setError((e as Error).message);}finally{setSaving(false);}}
