@@ -6,3 +6,4 @@ export * from './PageBanner';
 export * from './Brand';
 export * from './Button';
 export * from './Image';
+export * from './Input';
