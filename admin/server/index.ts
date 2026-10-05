@@ -7,6 +7,8 @@ import { port,projectRoot,allowedOrigins,sessionCookie,sessionLifetime } from '.
 import { hashPassword,verifyPassword,dummyPasswordHash } from './passwords.js';
 import * as store from './store.js';
 import { kindSchema,settingsSchema,validateRecord } from '../src/admin-model.js';
+
+
 class HttpError extends Error{constructor(public status:number,message:string){super(message);}}
 const accountSchema=z.object({username:z.string().trim().min(3).max(40).regex(/^[a-zA-Z0-9_.-]+$/,'Use letters, numbers, dots, underscores, or hyphens.'),password:z.string().min(8,'Use a password with at least 8 characters.').max(128)}).strict();
 const revisions=z.object({revision:z.number().int().nonnegative()}).strict();

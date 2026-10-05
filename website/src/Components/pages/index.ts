@@ -1,0 +1,11 @@
+export { default as HomePage } from './HomePage';
+export { default as AboutPage } from './AboutPage';
+export { default as ProgramsPage } from './ProgramPage';
+export { default as AdmissionsPage } from './AdmissionPage';
+export { default as EnrollmentPage } from './EnrollmentPage';
+export { default as TeamPage } from './TeamPage';
+export { default as GalleryPage } from './GalleryPage';
+export { default as EventsPage } from './EventPage';
+export { default as BlogPage } from './BlogPage';
+export { default as ContactPage } from './ContactPage';
+export { default as NotFoundPage } from './NotFoundPage';
