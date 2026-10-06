@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutGrid, ClipboardList, Users, Star, Mail, BookOpen,
   Images, CalendarDays, FileText, Settings as SettingsIcon, LogOut,
@@ -26,8 +26,15 @@ export function SidebarNav() {
   const { data } = usePortal();
   const { logout } = useAuth();
   const { setOpenMobile } = useSidebar();
+  const { pathname } = useLocation();
 
-  const unread = data?.records.filter((r) => r.kind === 'messages' && r.status === 'Unread').length ?? 0;
+  const unread =
+    data?.records.filter((r) => r.kind === 'messages' && r.status === 'Unread').length ?? 0;
+
+  function isActive(item: (typeof nav)[number]) {
+    if ('end' in item && item.end) return pathname === item.to;
+    return pathname === item.to || pathname.startsWith(item.to + '/');
+  }
 
   return (
     <Sidebar className="school-sidebar">
@@ -44,13 +51,12 @@ export function SidebarNav() {
           <SidebarMenu>
             {nav.map((item) => (
               <SidebarMenuItem key={item.to}>
-                <SidebarMenuButton asChild className="school-nav-button">
-                  <NavLink
-                    to={item.to}
-                    end={'end' in item ? item.end : false}
-                    onClick={() => setOpenMobile(false)}
-                    className={({ isActive }) => (isActive ? 'active' : '')}
-                  >
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive(item)}
+                  className="school-nav-button"
+                >
+                  <NavLink to={item.to} onClick={() => setOpenMobile(false)}>
                     <item.icon size={18} />
                     <span>{item.label}</span>
                     {item.badge && unread > 0 && <b className="nav-count">{unread}</b>}

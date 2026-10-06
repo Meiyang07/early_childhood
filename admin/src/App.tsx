@@ -7,11 +7,17 @@ import { LoginPage } from './authPage/LoginPage';
 import { ForgotPasswordPage } from './authPage/ForgotPassword';
 import { VerifyOtpPage } from './authPage/VerifyOtp';
 import { ResetPasswordPage } from './authPage/ResetPasswordPage';
-import { OverviewPage } from './components/pages/overview/OverviewPage';
-import { RecordsPage } from './components/pages/records/RecordsPage';
-import { SettingsPage } from './components/pages/settings/SettingsPage';
-import { NotFoundPage } from './components/pages/NotFoundPage/NotFoundPage';
+import { OverviewPage } from '@/components/pages/overview/OverviewPage';
 
+import { SettingsPage } from '@/components/pages/SettingsPage';
+import { NotFoundPage } from '@/components/pages/NotFoundPage/NotFoundPage';
+import { AdmissionsPage } from './components/pages/AdmissionPage';
+import { StaffPage } from './components/pages/StaffPage';
+import { ReviewsPage } from './components/pages/ReviewPage';
+import { ProgramsPage } from './components/pages/ProgramsPage';
+import { GalleryPage } from './components/pages/GalleryPage';
+import { EventsPage } from './components/pages/EventsPage';
+import { BlogPage } from './components/pages/BlogPage';
 
 const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/admin" replace /> },
@@ -28,7 +34,14 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <OverviewPage /> },
-      { path: ':section', element: <RecordsPage /> },
+      { path: 'admissions', element: <AdmissionsPage /> },
+      { path: 'staff', element: <StaffPage /> },
+      { path: 'reviews', element: <ReviewsPage /> },
+    
+      { path: 'programs', element: <ProgramsPage /> },
+      { path: 'gallery', element: <GalleryPage /> },
+      { path: 'events', element: <EventsPage /> },
+      { path: 'blog', element: <BlogPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },

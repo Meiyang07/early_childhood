@@ -1,5 +1,5 @@
 import { Bell, UserRound } from 'lucide-react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { config, type Section } from '@/types/admin';
@@ -12,7 +12,7 @@ const validSections: Section[] = [
 
 function useSection(): Section {
   const { pathname } = useLocation();
-  const part = pathname.replace(/^\/admin\/?/, '') || 'overview';
+  const part = pathname.replace(/^\/admin\/?/, '').split('/')[0] || 'overview';
   return (validSections.includes(part as Section) ? part : 'overview') as Section;
 }
 
@@ -21,7 +21,8 @@ export function AppHeader() {
   const { data } = usePortal();
   const navigate = useNavigate();
 
-  const unread = data?.records.filter((r) => r.kind === 'messages' && r.status === 'Unread').length ?? 0;
+  const unread =
+    data?.records.filter((r) => r.kind === 'messages' && r.status === 'Unread').length ?? 0;
 
   const greeting = (() => {
     const hour = Number(
@@ -32,14 +33,18 @@ export function AppHeader() {
   })();
 
   const title =
-    section === 'overview' ? `${greeting}, ${data?.settings.adminName ?? 'Admin'}`
-    : section === 'settings' ? 'Settings'
-    : config[section].title;
+    section === 'overview'
+      ? `${greeting}, ${data?.settings.adminName ?? 'Admin'}`
+      : section === 'settings'
+        ? 'Settings'
+        : config[section].title;
 
   const subtitle =
-    section === 'overview' ? 'Your school, organized in one place.'
-    : section === 'settings' ? 'Update school details and your admin preferences.'
-    : config[section].description;
+    section === 'overview'
+      ? 'Your school, organized in one place.'
+      : section === 'settings'
+        ? 'Update school details and your admin preferences.'
+        : config[section].description;
 
   return (
     <header className="workspace-header">

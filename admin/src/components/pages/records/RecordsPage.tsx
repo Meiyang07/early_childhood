@@ -1,26 +1,28 @@
-import { useMemo, useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
-import { config, kinds, validateRecord, type AdminRecord, type Kind } from '@/types/admin';
-import { usePortal } from '@/lib/portal';
+import { useMemo, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import { RecordsToolbar } from './RecordsToolbar';
+import { config, validateRecord, type AdminRecord, type Kind } from '@/types/admin';
+import { usePortal } from '@/lib/portal';
 import { EmptyState } from '@/components/Common/EmptyState';
-import { StaffGrid } from './StaffGrid';
-import { GalleryGrid } from './GalleryGrid';
-
-import { ReviewsGrid } from './ReviewGrid';
-import { RecordsTable } from './RecordsTable';
+import { RecordsToolbar } from './RecordsToolbar';
 import { RecordEditor } from './RecordEditor';
 import { DeleteDialog } from './DeleteDialog';
 
-
 type Editor = { kind: Kind; record?: AdminRecord } | null;
 
-export function RecordsPage() {
-  const { section } = useParams<{ section: string }>();
-  const kind = kinds.includes(section as Kind) ? (section as Kind) : null;
-  if (!kind) return <Navigate to="/admin" replace />;
+type SharedProps = {
+  records: AdminRecord[];
+  onEdit: (record: AdminRecord) => void;
+  onRemove: (record: AdminRecord) => void;
+};
 
+type Props = {
+  kind: Kind;
+  renderView: (props: SharedProps) => ReactNode;
+  onApprove?: (record: AdminRecord) => void;   // reviews only
+  onOpen?: (record: AdminRecord) => void;      // messages only
+};
+
+export function RecordsPage({ kind, renderView, onApprove, onOpen }: Props) {
   const { data, addRecord, updateRecord, removeRecord } = usePortal();
   const [editor, setEditor] = useState<Editor>(null);
   const [remove, setRemove] = useState<AdminRecord | null>(null);
@@ -28,33 +30,31 @@ export function RecordsPage() {
   const [filter, setFilter] = useState('All');
   const [team, setTeam] = useState('All');
 
-  if (!data) return null;
-
-  const def = config[kind];
-  const records = data.records;
-
   const visible = useMemo(() => {
+    if (!data) return [];
     const q = search.toLowerCase();
-    return records.filter(
+    return data.records.filter(
       (r) =>
         r.kind === kind &&
         (filter === 'All' || r.status === filter) &&
         (kind !== 'staff' || team === 'All' || r.data.group === team) &&
         `${r.name} ${Object.values(r.data).join(' ')}`.toLowerCase().includes(q),
     );
-  }, [records, kind, filter, team, search]);
+  }, [data, kind, filter, team, search]);
 
+  if (!data) return null;
+
+  const def = config[kind];
   const hasFilter = search !== '' || filter !== 'All' || team !== 'All';
 
-  async function handleSave(values: { name: string; status: string; data: Record<string, string> }) {
-    const record = editor?.record;
+  function handleSave(values: { name: string; status: string; data: Record<string, string> }) {
     try {
-      const valid = validateRecord(kind!, values);
-      if (record) {
-        updateRecord(record.id, valid);
+      const valid = validateRecord(kind, values);
+      if (editor?.record) {
+        updateRecord(editor.record.id, valid);
         toast.success('Changes saved');
       } else {
-        addRecord(kind!, valid);
+        addRecord(kind, valid);
         toast.success(`${def.singular[0].toUpperCase()}${def.singular.slice(1)} added`);
       }
       setEditor(null);
@@ -70,10 +70,11 @@ export function RecordsPage() {
     setRemove(null);
   }
 
-  const shared = {
-    onEdit: (record: AdminRecord) => setEditor({ kind, record }),
-    onRemove: (record: AdminRecord) => setRemove(record),
-  };
+ const shared: SharedProps = {
+  records: visible,
+  onEdit: (record) => setEditor({ kind, record }),
+  onRemove: (record) => setRemove(record),
+};
 
   return (
     <>
@@ -89,7 +90,9 @@ export function RecordsPage() {
       />
 
       <div className="records-caption">
-        <span>{visible.length} {kind === 'staff' ? 'team members' : def.title.toLowerCase()}</span>
+        <span>
+          {visible.length} {kind === 'staff' ? 'team members' : def.title.toLowerCase()}
+        </span>
         {['admissions', 'messages', 'reviews'].includes(kind) && (
           <span>Rows marked Example contain sample data.</span>
         )}
@@ -114,20 +117,8 @@ export function RecordsPage() {
             }
           }}
         />
-      ) : kind === 'staff' ? (
-        <StaffGrid records={visible} {...shared} />
-      ) : kind === 'gallery' ? (
-        <GalleryGrid records={visible} {...shared} />
-      ) : kind === 'reviews' ? (
-        <ReviewsGrid
-          records={visible}
-          onApprove={(record) =>
-            updateRecord(record.id, { name: record.name, status: 'Approved', data: record.data })
-          }
-          {...shared}
-        />
       ) : (
-        <RecordsTable kind={kind} records={visible} {...shared} />
+        renderView(shared)
       )}
 
       <p className="independent-note">Changes are saved locally on this computer.</p>

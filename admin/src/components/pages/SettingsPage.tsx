@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { ShieldCheck, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,15 @@ import { useAuth } from '@/lib/auth';
 import { settingsSchema, timeLabel, type Settings } from '@/types/admin';
 import { PasswordForm } from '@/components/auth/PasswordForm';
 
-
 export function SettingsPage() {
   const { data, updateSettings } = usePortal();
   const { user } = useAuth();
-  const [settings, setSettings] = useState<Settings | null>(data?.settings ?? null);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (data) setSettings(data.settings);
+  }, [data]);
 
   if (!data || !settings) return null;
 

@@ -6,10 +6,10 @@ import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@
 import { dateLabel, type AdminRecord, type Kind } from '@/types/admin';
 
 const headers: Record<string, string[]> = {
-  admissions: ['Applicant', 'Program', 'Date', 'Status'],
-  programs: ['Program', 'Age group', 'Monthly fee', 'Status'],
-  events: ['Title', 'Date & time', 'Location', 'Status'],
-  blog: ['Title', 'Author', 'Date', 'Status'],
+  admissions: ['Applicant', 'Program', 'Date', 'Status', 'Actions'],
+  programs: ['Program', 'Age group', 'Monthly fee', 'Status', 'Actions'],
+  events: ['Title', 'Date & time', 'Location', 'Status', 'Actions'],
+  blog: ['Title', 'Author', 'Date', 'Status', 'Actions'],
 };
 
 function cellValues(record: AdminRecord, kind: Kind): string[] {
@@ -41,8 +41,11 @@ export function RecordsTable({
         <TableHeader>
           <TableRow>
             {headers[kind].map((label, i) => (
-              <TableHead key={label} className={i === headers[kind].length - 1 ? 'text-right' : ''}>
-                {i === headers[kind].length - 1 ? 'Actions' : label}
+              <TableHead
+                key={label}
+                className={i === headers[kind].length - 1 ? 'text-right' : ''}
+              >
+                {label}
               </TableHead>
             ))}
           </TableRow>
