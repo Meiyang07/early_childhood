@@ -7,7 +7,7 @@ import { RecordsToolbar } from './RecordsToolbar';
 import { EmptyState } from '@/components/Common/EmptyState';
 import { StaffGrid } from './StaffGrid';
 import { GalleryGrid } from './GalleryGrid';
-import { MessagesList } from './MessageLists';
+
 import { ReviewsGrid } from './ReviewGrid';
 import { RecordsTable } from './RecordsTable';
 import { RecordEditor } from './RecordEditor';
@@ -118,16 +118,6 @@ export function RecordsPage() {
         <StaffGrid records={visible} {...shared} />
       ) : kind === 'gallery' ? (
         <GalleryGrid records={visible} {...shared} />
-      ) : kind === 'messages' ? (
-        <MessagesList
-          records={visible}
-          onOpen={(record) => {
-            if (record.status === 'Unread') {
-              updateRecord(record.id, { name: record.name, status: 'Read', data: record.data });
-            }
-          }}
-          {...shared}
-        />
       ) : kind === 'reviews' ? (
         <ReviewsGrid
           records={visible}

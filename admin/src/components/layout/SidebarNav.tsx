@@ -15,7 +15,6 @@ const nav = [
   { to: '/admin/admissions', label: 'Admissions', icon: ClipboardList, badge: false },
   { to: '/admin/staff', label: 'Staff & Teachers', icon: Users, badge: false },
   { to: '/admin/reviews', label: 'Reviews', icon: Star, badge: false },
-  { to: '/admin/messages', label: 'Messages', icon: Mail, badge: true },
   { to: '/admin/programs', label: 'Programs', icon: BookOpen, badge: false },
   { to: '/admin/gallery', label: 'Gallery', icon: Images, badge: false },
   { to: '/admin/events', label: 'Events', icon: CalendarDays, badge: false },
