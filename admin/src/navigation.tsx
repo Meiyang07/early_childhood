@@ -1,5 +1,0 @@
-import { forwardRef,type AnchorHTMLAttributes,useEffect,useState } from 'react';
-export function navigate(path:string){if(!path.startsWith('/')||path.startsWith('//'))return;history.pushState({},'',path);window.dispatchEvent(new PopStateEvent('popstate'));window.scrollTo({top:0,behavior:'instant'});}
-export function usePath(){const [path,setPath]=useState(location.pathname);useEffect(()=>{const change=()=>setPath(location.pathname);window.addEventListener('popstate',change);return()=>window.removeEventListener('popstate',change);},[]);return path;}
-export function useRouter(){return {push:navigate};}
-export const Link=forwardRef<HTMLAnchorElement,AnchorHTMLAttributes<HTMLAnchorElement>>(function Link({href='',onClick,...props},ref){return <a ref={ref} href={href} {...props} onClick={event=>{onClick?.(event);if(!event.defaultPrevented&&event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey&&href.startsWith('/')&&props.target!=='_blank'){event.preventDefault();navigate(href);}}}/>;});
