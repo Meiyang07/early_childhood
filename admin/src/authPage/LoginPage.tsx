@@ -1,13 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, LockKeyhole } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
 import { useAuth } from '@/lib/auth';
 
 export function LoginPage() {
@@ -16,7 +9,6 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
-  const [help, setHelp] = useState(false);
 
   if (user) return <Navigate to="/admin" replace />;
 
@@ -98,13 +90,9 @@ export function LoginPage() {
               </div>
             </div>
 
-            <button
-              className="forgot-password"
-              type="button"
-              onClick={() => setHelp(true)}
-            >
+            <Link to="/forgot-password" className="forgot-password">
               Forgot Password?
-            </button>
+            </Link>
 
             {error && <p className="login-error" role="alert">{error}</p>}
 
@@ -118,26 +106,6 @@ export function LoginPage() {
           </p>
         </section>
       </div>
-
-      <Dialog open={help} onOpenChange={setHelp}>
-        <DialogContent className="message-dialog">
-          <DialogHeader>
-            <DialogTitle>Reset the admin password</DialogTitle>
-            <DialogDescription>
-              The password is set by your developer, not stored in this browser.
-            </DialogDescription>
-          </DialogHeader>
-          <p>
-            Ask your developer to edit{' '}
-            <code>src/data/admin-account.ts</code>, change the password, and rebuild the
-            project. Then sign in with the new password.
-          </p>
-          <p className="secondary-text">
-            There is no self-service reset — that is intentional. Only someone with
-            access to the source code can change the admin credentials.
-          </p>
-        </DialogContent>
-      </Dialog>
     </main>
   );
 }
