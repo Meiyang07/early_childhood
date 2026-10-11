@@ -1,23 +1,23 @@
 import {
   createContext,
-  useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from 'react';
-import type { AdminRecord, Kind, PortalData, Settings } from '@/types/admin';
+import type { AdminRecord, Kind, Settings } from '@/types/admin';
+import { defaultSettings } from '@/types/admin';
+import { useAuth } from './auth';
 
-import { portalStorage } from './storage';
-import { buildInitialPortal } from '@/data/seed';
-
-type RecordValues = { name: string; status: string; data: Record<string, string> };
+type PortalData = {
+  records: AdminRecord[];
+  settings: Settings;
+  settingsRevision: number;
+};
 
 type PortalContextValue = {
-  data: PortalData | null;
-  addRecord: (kind: Kind, values: RecordValues) => AdminRecord | null;
-  updateRecord: (id: string, values: RecordValues) => AdminRecord | null;
+  data: PortalData;
+  addRecord: (kind: Kind, values: { name: string; status: string; data: Record<string, string> }) => void;
+  updateRecord: (id: string, values: { name: string; status: string; data: Record<string, string> }) => void;
   removeRecord: (id: string) => void;
   updateSettings: (settings: Settings) => void;
   refresh: () => void;
@@ -26,88 +26,43 @@ type PortalContextValue = {
 const PortalContext = createContext<PortalContextValue | null>(null);
 
 export function PortalProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<PortalData | null>(null);
+  const { user } = useAuth();
 
-  useEffect(() => {
-    const stored = portalStorage.load();
-    if (stored) {
-      setData(stored);
-    } else {
-      const initial = buildInitialPortal();
-      portalStorage.save(initial);
-      setData(initial);
-    }
-  }, []);
-
-  const commit = useCallback((next: PortalData) => {
-    setData(next);
-    portalStorage.save(next);
-  }, []);
-
-  const addRecord = useCallback<PortalContextValue['addRecord']>(
-    (kind, values) => {
-      if (!data) return null;
-      const now = new Date().toISOString();
-      const record: AdminRecord = {
-        id: crypto.randomUUID(),
-        kind,
-        name: values.name,
-        status: values.status,
-        data: values.data,
-        revision: 0,
-        createdAt: now,
-        updatedAt: now,
-      };
-      commit({ ...data, records: [record, ...data.records] });
-      return record;
-    },
-    [data, commit],
+  // Server currently exposes no records/settings endpoint.
+  // Everything starts empty and only the staff mutation feeds the cache.
+  const data = useMemo<PortalData>(
+    () => ({
+      records: [],
+      settings: defaultSettings,
+      settingsRevision: 0,
+    }),
+    [],
   );
 
-  const updateRecord = useCallback<PortalContextValue['updateRecord']>(
-    (id, values) => {
-      if (!data) return null;
-      const existing = data.records.find((r) => r.id === id);
-      if (!existing) return null;
-      const updated: AdminRecord = {
-        ...existing,
-        name: values.name,
-        status: values.status,
-        data: values.data,
-        revision: existing.revision + 1,
-        updatedAt: new Date().toISOString(),
-      };
-      commit({ ...data, records: data.records.map((r) => (r.id === id ? updated : r)) });
-      return updated;
-    },
-    [data, commit],
+  const value = useMemo<PortalContextValue>(
+    () => ({
+      data,
+      addRecord: () => {
+        // TODO: wire to server when endpoint exists
+      },
+      updateRecord: () => {
+        // TODO: wire to server when endpoint exists
+      },
+      removeRecord: () => {
+        // TODO: wire to server when endpoint exists
+      },
+      updateSettings: () => {
+        // TODO: wire to server when endpoint exists
+      },
+      refresh: () => {
+        // no-op until server endpoints exist
+      },
+    }),
+    [data],
   );
 
-  const removeRecord = useCallback<PortalContextValue['removeRecord']>(
-    (id) => {
-      if (!data) return;
-      commit({ ...data, records: data.records.filter((r) => r.id !== id) });
-    },
-    [data, commit],
-  );
-
-  const updateSettings = useCallback<PortalContextValue['updateSettings']>(
-    (settings) => {
-      if (!data) return;
-      commit({ ...data, settings, settingsRevision: data.settingsRevision + 1 });
-    },
-    [data, commit],
-  );
-
-  const refresh = useCallback(() => {
-    const stored = portalStorage.load();
-    if (stored) setData(stored);
-  }, []);
-
-  const value = useMemo(
-    () => ({ data, addRecord, updateRecord, removeRecord, updateSettings, refresh }),
-    [data, addRecord, updateRecord, removeRecord, updateSettings, refresh],
-  );
+  // user is referenced so the provider re-renders on auth changes
+  void user;
 
   return <PortalContext.Provider value={value}>{children}</PortalContext.Provider>;
 }

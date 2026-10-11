@@ -1,45 +1,46 @@
-import { useState, type FormEvent } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { Eye, EyeOff, LockKeyhole } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
+// src/pages/LoginPage.tsx
+import { useState, type FormEvent } from "react";
+import { Link, Navigate, useLocation } from "react-router-dom";
+import { Eye, EyeOff, LockKeyhole } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import type { ApiError } from "@/lib/api";
 
 export function LoginPage() {
-  const { user, login } = useAuth();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const { user, login, isLoading } = useAuth();
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? "/admin";
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  if (user) return <Navigate to="/admin" replace />;
+  // Already logged in → go to dashboard
+  if (user) return <Navigate to={from} replace />;
+  // Don't flash the form before /me resolves
+  if (isLoading) return null;
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
-    setError('');
+    setError("");
+    setSubmitting(true);
     try {
-      login(username, password);
+      await login({ email: email.trim(), password });
     } catch (e) {
-      setError((e as Error).message);
+      const err = e as ApiError;
+      setError(err?.message ?? "Unable to sign in");
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
     <main className="login-page">
-      <div className="login-orb peach" aria-hidden="true" />
-      <div className="login-orb blue" aria-hidden="true" />
-      <div className="login-orb lilac" aria-hidden="true" />
-      <div className="login-orb mint" aria-hidden="true" />
-      <div className="login-confetti" aria-hidden="true">
-        <i /><i /><i /><i /><i /><i />
-      </div>
-
+      {/* …orbs unchanged… */}
       <div className="login-layout">
         <section className="login-brand" aria-label="Early Childhood Montessori">
-          <img
-            src="/assets/school-logo.jpg"
-            alt="Early Childhood Education Centre, Pokhara"
-            width="390"
-            height="390"
-          />
+          <img src="/assets/school-logo.jpg" alt="Early Childhood Education Centre, Pokhara" width={390} height={390} />
           <h1>Early Childhood</h1>
           <p>Montessori</p>
         </section>
@@ -52,17 +53,17 @@ export function LoginPage() {
 
           <form onSubmit={submit}>
             <div className="login-field">
-              <label htmlFor="username">Username</label>
+              <label htmlFor="username">Email</label>
               <input
                 id="username"
+                type="email"
                 autoComplete="username"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                minLength={3}
-                maxLength={40}
                 autoFocus
+                disabled={submitting}
               />
             </div>
 
@@ -71,18 +72,18 @@ export function LoginPage() {
               <div className="password-input">
                 <input
                   id="password"
+                  type={visible ? "text" : "password"}
                   autoComplete="current-password"
-                  type={visible ? 'text' : 'password'}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={8}
-                  maxLength={128}
+                  minLength={6}
+                  disabled={submitting}
                 />
                 <button
                   type="button"
-                  aria-label={visible ? 'Hide password' : 'Show password'}
+                  aria-label={visible ? "Hide password" : "Show password"}
                   onClick={() => setVisible((v) => !v)}
                 >
                   {visible ? <EyeOff size={19} /> : <Eye size={19} />}
@@ -90,19 +91,15 @@ export function LoginPage() {
               </div>
             </div>
 
-            <Link to="/forgot-password" className="forgot-password">
-              Forgot Password?
-            </Link>
-
             {error && <p className="login-error" role="alert">{error}</p>}
 
-            <button className="login-button" type="submit">
-              Log in
+            <button className="login-button" type="submit" disabled={submitting}>
+              {submitting ? "Signing in…" : "Log in"}
             </button>
           </form>
 
           <p className="login-security">
-            <LockKeyhole size={16} /> Local admin account
+            <LockKeyhole size={16} /> Secure admin session
           </p>
         </section>
       </div>

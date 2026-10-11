@@ -7,7 +7,7 @@ export function ContentSummary({ records }: { records: AdminRecord[] }) {
     ['Team Profiles', records.filter((r) => r.kind === 'staff').length],
     ['Gallery Items', records.filter((r) => r.kind === 'gallery').length],
     ['Upcoming Events', records.filter((r) => r.kind === 'events' && r.status === 'Published' && r.data.date >= today()).length],
-    ['Unread Messages', records.filter((r) => r.kind === 'messages' && r.status === 'Unread').length],
+  
   ];
 
   return (

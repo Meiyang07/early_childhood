@@ -7,6 +7,6 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
-  server: { host: '127.0.0.1', port: 5175, strictPort: true },
-  preview: { host: '127.0.0.1', port: 5175, strictPort: true },
+  server: {  port: 5175, strictPort: true },
+  
 });

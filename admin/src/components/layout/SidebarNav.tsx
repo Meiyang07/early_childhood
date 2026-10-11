@@ -23,13 +23,11 @@ const nav = [
 ] as const;
 
 export function SidebarNav() {
-  const { data } = usePortal();
+
   const { logout } = useAuth();
   const { setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
 
-  const unread =
-    data?.records.filter((r) => r.kind === 'messages' && r.status === 'Unread').length ?? 0;
 
   function isActive(item: (typeof nav)[number]) {
     if ('end' in item && item.end) return pathname === item.to;
@@ -59,7 +57,7 @@ export function SidebarNav() {
                   <NavLink to={item.to} onClick={() => setOpenMobile(false)}>
                     <item.icon size={18} />
                     <span>{item.label}</span>
-                    {item.badge && unread > 0 && <b className="nav-count">{unread}</b>}
+
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

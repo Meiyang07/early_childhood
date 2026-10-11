@@ -29,19 +29,13 @@ export function StatCards({ records }: { records: AdminRecord[] }) {
       tone: 'coral',
       to: '/admin/staff',
     },
-    {
-      label: 'Messages',
-      value: records.filter((r) => r.kind === 'messages' && r.status === 'Unread').length,
-      caption: 'Need attention',
-      tone: 'blue',
-      to: '/admin/messages',
-    },
+   
   ];
 
   return (
     <section className="overview-section">
       <h2 className="section-label">Overview</h2>
-      <div className="overview-stats">
+      <div className="overview-stats ">
         {stats.map((stat, i) => (
           <Link to={stat.to} className="stat" key={stat.label} style={{ '--order': i } as CSSProperties}>
             <span className="stat-label">

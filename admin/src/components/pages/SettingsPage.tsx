@@ -4,13 +4,14 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePortal } from '@/lib/portal';
-import { useAuth } from '@/lib/auth';
+
 import { settingsSchema, timeLabel, type Settings } from '@/types/admin';
 import { PasswordForm } from '@/components/auth/PasswordForm';
+import { useAuth } from '@/lib/auth';
 
 export function SettingsPage() {
   const { data, updateSettings } = usePortal();
-  const { user } = useAuth();
+  const {user}=useAuth();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [error, setError] = useState('');
 
@@ -72,8 +73,8 @@ export function SettingsPage() {
         <section className="panel">
           <ShieldCheck size={27} />
           <h2>Admin Account</h2>
-          <strong>{user?.name ?? settings.adminName}</strong>
-          <p className="account-email">{user?.username}</p>
+          <strong>{user?.username}</strong>
+          <p className="account-email">{user?.email}</p>
           <span className="status status-active">Local administrator</span>
           <PasswordForm />
         </section>

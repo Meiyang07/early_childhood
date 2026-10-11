@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const kinds = [
-  'admissions', 'staff', 'reviews', 'messages',
+  'admissions', 'staff', 'reviews',
   'programs', 'gallery', 'events', 'blog',
 ] as const;
 
@@ -30,12 +30,6 @@ export type Settings = {
   adminName: string;
 };
 
-export type PortalData = {
-  records: AdminRecord[];
-  settings: Settings;
-  settingsRevision: number;
-};
-
 export type Field = {
   key: string;
   label: string;
@@ -55,13 +49,6 @@ export type KindConfig = {
   fields: Field[];
 };
 
-export type Account = {
-  username: string;
-  password: string;
-  name: string;
-};
-
-// ---------- Config ----------
 export const config: Record<Kind, KindConfig> = {
   admissions: {
     title: 'Admissions', singular: 'admission', nameLabel: 'Child’s name',
@@ -77,16 +64,21 @@ export const config: Record<Kind, KindConfig> = {
       { key: 'notes', label: 'Application notes', type: 'textarea' },
     ],
   },
-  staff: {
-    title: 'Staff & Teachers', singular: 'team member', nameLabel: 'Full name',
-    description: 'Manage admins, teachers, and operators.',
-    statuses: ['Active', 'Inactive'],
-    fields: [
-      { key: 'group', label: 'Team', type: 'select', options: ['Admins', 'Teachers', 'Operators'], required: true },
-      { key: 'role', label: 'Role', required: true },
-      { key: 'bio', label: 'About this member', type: 'textarea' },
-    ],
-  },
+staff: {
+  title: 'Staff & Teachers', singular: 'team member', nameLabel: 'Full name',
+  description: 'Manage admins, teachers, and operators.',
+  statuses: ['Active', 'Inactive'],
+  fields: [
+    {
+      key: 'role',
+      label: 'Role',
+      required: true,
+      type: 'select',
+      options: ['ADMIN', 'TEACHER', 'OPERATOR'],
+    },
+    { key: 'bio', label: 'About this member', type: 'textarea' },
+  ],
+},
   reviews: {
     title: 'Reviews', singular: 'review', nameLabel: 'Parent’s name',
     description: 'Review parent feedback and approve testimonials.',
@@ -94,17 +86,6 @@ export const config: Record<Kind, KindConfig> = {
     fields: [
       { key: 'rating', label: 'Rating', type: 'select', options: ['5', '4', '3', '2', '1'], required: true },
       { key: 'body', label: 'Review', type: 'textarea', required: true },
-      { key: 'date', label: 'Date', type: 'date', required: true },
-    ],
-  },
-  messages: {
-    title: 'Messages', singular: 'message', nameLabel: 'Sender’s name',
-    description: 'Read enquiries and keep track of follow-up.',
-    statuses: ['Unread', 'Read', 'Resolved'],
-    fields: [
-      { key: 'subject', label: 'Subject', required: true },
-      { key: 'email', label: 'Email', type: 'email' },
-      { key: 'body', label: 'Message', type: 'textarea', required: true },
       { key: 'date', label: 'Date', type: 'date', required: true },
     ],
   },
@@ -152,17 +133,16 @@ export const config: Record<Kind, KindConfig> = {
 };
 
 export const defaultSettings: Settings = {
-  schoolName: 'Early Childhood Montessori',
-  email: 'mail@earlychildhood.edu.np',
-  phone: '+977 61-552290',
-  address: 'Ranipauwa, Pokhara-11, Nepal',
-  workingDays: 'Monday – Friday',
+  schoolName: '',
+  email: '',
+  phone: '',
+  address: '',
+  workingDays: '',
   openTime: '09:00',
   closeTime: '16:00',
   adminName: 'Admin',
 };
 
-// ---------- Validation ----------
 export const settingsSchema = z
   .object({
     schoolName: z.string().trim().min(2).max(120),
@@ -210,16 +190,9 @@ export function validateRecord(
       throw new Error('Enter a valid date.');
     data[field.key] = value;
   }
-
-  if (kind === 'staff' || kind === 'gallery') {
-    data.imagePath = input.data.imagePath ?? '';
-  }
-  if (input.data.example === 'true') data.example = 'true';
-
   return { name: input.name.trim(), status: input.status, data };
 }
 
-// ---------- Helpers ----------
 export const today = () =>
   new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Katmandu',
@@ -241,9 +214,9 @@ export const titleCase = (text: string) => text.charAt(0).toUpperCase() + text.s
 export function dateLabel(date: string) {
   return date
     ? new Intl.DateTimeFormat('en', {
-        month: 'short',
-        day: 'numeric',
-        timeZone: 'Asia/Katmandu',
-      }).format(new Date(date + 'T00:00:00Z'))
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'Asia/Katmandu',
+    }).format(new Date(date + 'T00:00:00Z'))
     : '—';
 }

@@ -1,12 +1,13 @@
 import { Bell, UserRound } from 'lucide-react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation} from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
+
 import { config, type Section } from '@/types/admin';
-import { usePortal } from '@/lib/portal';
+import { useAuth } from '@/lib/auth';
+
 
 const validSections: Section[] = [
-  'overview', 'admissions', 'staff', 'reviews', 'messages',
+  'overview', 'admissions', 'staff', 'reviews',
   'programs', 'gallery', 'events', 'blog', 'settings',
 ];
 
@@ -18,11 +19,8 @@ function useSection(): Section {
 
 export function AppHeader() {
   const section = useSection();
-  const { data } = usePortal();
-  const navigate = useNavigate();
+  const {user}=useAuth()
 
-  const unread =
-    data?.records.filter((r) => r.kind === 'messages' && r.status === 'Unread').length ?? 0;
 
   const greeting = (() => {
     const hour = Number(
@@ -34,7 +32,7 @@ export function AppHeader() {
 
   const title =
     section === 'overview'
-      ? `${greeting}, ${data?.settings.adminName ?? 'Admin'}`
+      ? `${greeting}, ${user?.username}`
       : section === 'settings'
         ? 'Settings'
         : config[section].title;
@@ -57,19 +55,10 @@ export function AppHeader() {
       </div>
 
       <div className="header-tools">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="notification-button"
-          aria-label={`${unread} unread messages`}
-          onClick={() => navigate('/admin/messages')}
-        >
-          <Bell size={23} />
-          {unread > 0 && <span />}
-        </Button>
+        
         <Link to="/admin/settings" className="account-button">
           <UserRound size={22} />
-          <span>{data?.settings.adminName ?? 'Admin'}</span>
+          <span>{user?.role ?? user?.role}</span>
         </Link>
       </div>
     </header>

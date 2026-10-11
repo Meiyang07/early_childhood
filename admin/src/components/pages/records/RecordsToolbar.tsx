@@ -1,15 +1,22 @@
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { config, type Kind } from '@/types/admin';
-import { usePortal } from '@/lib/portal';
 import { Choice } from '@/components/Common/Choice';
 
 export function RecordsToolbar({
-  kind, filter, onFilterChange, search, onSearchChange, onAdd, team, onTeamChange,
+  kind,
+  filter,
+  onFilterChange,
+  search,
+  onSearchChange,
+  onAdd,
+  team,
+  onTeamChange,
 }: {
   kind: Kind;
   filter: string;
@@ -20,12 +27,12 @@ export function RecordsToolbar({
   team: string;
   onTeamChange: (value: string) => void;
 }) {
-  const { data, refresh } = usePortal();
+  const qc = useQueryClient();
   const def = config[kind];
 
   function handleRefresh() {
-    refresh();
-    toast.success('Workspace refreshed');
+    qc.invalidateQueries({ queryKey: [kind] });
+    toast.success('Refreshed');
   }
 
   return (
@@ -48,7 +55,12 @@ export function RecordsToolbar({
             onChange={onFilterChange}
             label="Filter by status"
           />
-          <Button variant="ghost" size="icon" onClick={handleRefresh} aria-label="Refresh records">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            aria-label="Refresh records"
+          >
             <RefreshCw size={18} />
           </Button>
           <Button className="primary-button" onClick={onAdd}>
@@ -58,22 +70,9 @@ export function RecordsToolbar({
         </div>
       </div>
 
-      {kind === 'staff' && data && (
-        <Tabs value={team} onValueChange={onTeamChange} className="team-tabs">
-          <TabsList>
-            {['All', 'Admins', 'Teachers', 'Operators'].map((t) => (
-              <TabsTrigger value={t} key={t}>
-                {t}{' '}
-                <span>
-                  {data.records.filter(
-                    (r) => r.kind === 'staff' && (t === 'All' || r.data.group === t),
-                  ).length}
-                </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      )}
+      {/* team tabs intentionally removed — staff page handles its own */}
+      {void team}
+      {void onTeamChange}
     </>
   );
 }
