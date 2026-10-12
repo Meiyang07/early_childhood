@@ -13,7 +13,7 @@ testimonialRouter.post("/testimonial-create", requireAuth, requireRole("ADMIN"),
 
 // Update testimonial content
 testimonialRouter.patch(
-    "/testimonials/:id",
+    "/update/:id",
     requireAuth,
     requireRole("ADMIN"),
     validate({
@@ -42,7 +42,7 @@ testimonialRouter.patch(
 
 // Delete
 testimonialRouter.delete(
-    "/testimonials/:id",
+    "/delete/:id",
     requireAuth,
     requireRole("ADMIN"),
     validate({ params: testimonialIdParamSchema }),

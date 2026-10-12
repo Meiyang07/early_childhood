@@ -38,14 +38,14 @@ photoRouter.post(
 
 // ---------- GET BY ID ----------
 photoRouter.get(
-    "/:id",
+    "/single-photo/:id",
     validate({ params: photoIdParamSchema }),
     asyncHandler(getPhotoById)
 );
 
 // ---------- UPDATE METADATA (JSON, no file) ----------
 photoRouter.patch(
-    "/:id",
+    "/update/:id",
     requireAuth,
     requireRole("ADMIN"),
     validate({ params: photoIdParamSchema, body: updatePhotoSchema }),
@@ -54,7 +54,7 @@ photoRouter.patch(
 
 // ---------- REPLACE IMAGE (multipart/form-data, field: "image") ----------
 photoRouter.patch(
-    "/:id/image",
+    "/replace/:id/image",
     requireAuth,
     requireRole("ADMIN"),
     uploadSingle("image"),
@@ -65,7 +65,7 @@ photoRouter.patch(
 
 // ---------- DELETE ----------
 photoRouter.delete(
-    "/:id",
+    "/delete/:id",
     requireAuth,
     requireRole("ADMIN"),
     validate({ params: photoIdParamSchema }),

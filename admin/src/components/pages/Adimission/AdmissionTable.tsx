@@ -53,7 +53,7 @@ export function AdmissionTable({
     <section className="panel records-table">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="border-b-gray-200">
             {HEADERS.map((label, i) => (
               <TableHead
                 key={label}

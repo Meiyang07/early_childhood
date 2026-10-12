@@ -1,11 +1,12 @@
-import { useNavigate } from 'react-router-dom';
-import { Users, Star, Images, ClipboardList } from 'lucide-react';
+// src/pages/overview/AdminControls.tsx (unchanged)
+import { useNavigate } from "react-router-dom";
+import { Users, Star, Images, ClipboardList } from "lucide-react";
 
 const items = [
-  { title: 'Staff & Teachers', text: 'Add / remove staff profiles', icon: Users, to: '/admin/staff', tone: 'blue' },
-  { title: 'Reviews', text: 'Check parent reviews', icon: Star, to: '/admin/reviews', tone: 'green' },
-  { title: 'Gallery', text: 'Add / remove photos', icon: Images, to: '/admin/gallery', tone: 'coral' },
-  { title: 'Pending', text: 'Review pending admissions', icon: ClipboardList, to: '/admin/admissions', tone: 'blue' },
+  { title: "Staff & Teachers", text: "Add / remove staff profiles", icon: Users, to: "/admin/staff", tone: "blue" },
+  { title: "Reviews", text: "Check parent reviews", icon: Star, to: "/admin/reviews", tone: "green" },
+  { title: "Gallery", text: "Add / remove photos", icon: Images, to: "/admin/gallery", tone: "coral" },
+  { title: "Pending", text: "Review pending admissions", icon: ClipboardList, to: "/admin/admissions", tone: "blue" },
 ] as const;
 
 export function AdminControls() {

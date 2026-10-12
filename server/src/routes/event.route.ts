@@ -33,14 +33,14 @@ eventRouter.post(
 
 // ---------- GET BY ID ----------
 eventRouter.get(
-    "/:id",
+    "/single-event/:id",
     validate({ params: eventIdParamSchema }),
     asyncHandler(getEventById)
 );
 
 // ---------- UPDATE ----------
 eventRouter.patch(
-    "/:id",
+    "/update/:id",
     requireAuth,
     requireRole("ADMIN"),
     validate({ params: eventIdParamSchema, body: updateEventSchema }),
@@ -49,7 +49,7 @@ eventRouter.patch(
 
 // ---------- DELETE ----------
 eventRouter.delete(
-    "/:id",
+    "/delete/:id",
     requireAuth,
     requireRole("ADMIN"),
     validate({ params: eventIdParamSchema }),

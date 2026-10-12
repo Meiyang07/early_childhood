@@ -1,10 +1,11 @@
-import { Users, CalendarDays, FileText, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+// src/pages/overview/QuickActions.tsx (unchanged)
+import { Users, CalendarDays, FileText, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const actions = [
-  { to: '/admin/staff', icon: Users, label: 'Add Team Member' },
-  { to: '/admin/events', icon: CalendarDays, label: 'Create Event' },
-  { to: '/admin/blog', icon: FileText, label: 'Create Blog' },
+  { to: "/admin/staff", icon: Users, label: "Add Team Member" },
+  { to: "/admin/events", icon: CalendarDays, label: "Create Event" },
+  { to: "/admin/blog", icon: FileText, label: "Create Blog" },
 ] as const;
 
 export function QuickActions() {

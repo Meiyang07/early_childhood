@@ -38,14 +38,14 @@ blogRouter.post(
 
 // ---------- GET BY ID ----------
 blogRouter.get(
-    "/:id",
+    "/single-blog/:id",
     validate({ params: blogIdParamSchema }),
     asyncHandler(getBlogById)
 );
 
 // ---------- UPDATE METADATA (JSON) ----------
 blogRouter.patch(
-    "/:id",
+    "/update/:id",
     requireAuth,
     requireRole("ADMIN"),
     validate({ params: blogIdParamSchema, body: updateBlogSchema }),
@@ -54,7 +54,7 @@ blogRouter.patch(
 
 // ---------- REPLACE IMAGE (multipart) ----------
 blogRouter.patch(
-    "/:id/image",
+    "/replace/:id/image",
     uploadSingle("image"),
     handleMulterError,
     requireAuth,
@@ -65,7 +65,7 @@ blogRouter.patch(
 
 // ---------- DELETE ----------
 blogRouter.delete(
-    "/:id",
+    "/delete/:id",
     requireAuth,
     requireRole("ADMIN"),
     validate({ params: blogIdParamSchema }),

@@ -21,7 +21,7 @@ programRouter.post(
 
 
 programRouter.patch(
-    "/:id",
+    "/update/:id",
     validate({ params: programIdParamSchema, body: updateProgramSchema }),
     asyncHandler(updateProgram)
 );

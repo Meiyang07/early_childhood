@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from '@/lib/auth';
-import { PortalProvider } from '@/lib/portal';
+
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from './authPage/LoginPage';
@@ -13,12 +13,14 @@ import { SettingsPage } from '@/components/pages/SettingsPage';
 import { NotFoundPage } from '@/components/pages/NotFoundPage/NotFoundPage';
 
 import { StaffPage } from './components/pages/StaffPage';
-import { ReviewsPage } from './components/pages/ReviewPage';
-import { ProgramsPage } from './components/pages/ProgramsPage';
-import { GalleryPage } from './components/pages/GalleryPage';
-import { EventsPage } from './components/pages/EventsPage';
-import { BlogPage } from './components/pages/BlogPage';
+
+
 import { AdmissionsPage } from './components/pages/Adimission/AdmissionPage';
+import { ReviewsPage } from './components/pages/Review/ReviewPage';
+import { ProgramsPage } from './components/pages/programs/ProgramPage';
+import { GalleryPage } from './components/pages/gallery/GalleryPage';
+import { EventsPage } from './components/pages/event/EventPage';
+import { BlogPage } from './components/pages/blog/BlogPage';
 
 const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/admin" replace /> },
@@ -52,9 +54,9 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <AuthProvider>
-      <PortalProvider>
+      
         <RouterProvider router={router} />
-      </PortalProvider>
+     
     </AuthProvider>
   );
 }

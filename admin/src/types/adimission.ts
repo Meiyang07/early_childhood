@@ -59,6 +59,7 @@ export const ADMISSION_STATUSES: AdmissionStatus[] = [
   "Waitlisted",
 ];
 
+
 export const PROGRAMS = [
   "All",
   "Nursery",
