@@ -1,0 +1,6524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Montessori API · Swagger</title>
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" crossorigin="anonymous">
+<style>
+body{margin:0;background:#fafbfe;font-family:Arial,sans-serif;color:#192341}
+.docs-header{padding:26px max(24px,calc((100vw - 1460px)/2));background:#283c82;color:white}
+.docs-header h1{margin:0 0 8px;font-size:26px}.docs-header p{margin:6px 0;line-height:1.55}
+.docs-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.docs-actions a,.docs-actions button{border:1px solid #ffffff70;border-radius:6px;padding:9px 13px;background:#fff;color:#283c82;font-size:14px;text-decoration:none;cursor:pointer}
+.scope-note{max-width:1412px;margin:20px auto;padding:16px 24px;border-left:4px solid #e85d26;background:#fff4e7;line-height:1.6}
+.scope-note p{margin:5px 0}.swagger-ui .topbar{display:none}
+.swagger-ui .wrapper{max-width:1460px}.mode{font-weight:bold}
+</style>
+</head>
+<body>
+<header class="docs-header">
+<h1>Early Childhood Montessori &amp; Academy API</h1>
+<p>Swagger / OpenAPI 3.0 · 36 operations · 9 groups · source revision 17fe242</p>
+<div class="docs-actions">
+<button id="download-spec" type="button">Download OpenAPI JSON</button>
+<a id="testing-link" href="?try=1">Enable local request testing</a>
+<a href="https://github.com/Meiyang07/early_childhood/tree/17fe242d711f00402a20e0e5f2cad3f4a182c2ea/server" target="_blank" rel="noopener noreferrer">Source revision</a>
+</div>
+</header>
+<aside class="scope-note">
+<p><strong>Version scope:</strong> This reference documents the connected GitHub backend at revision 17fe242. The newer project ZIP has different frontend endpoint names; compare its backend before reusing this contract.</p>
+<p id="mode" class="mode">Read-only reference.</p>
+<p>Authentication uses HTTP-only cookies. Browse the operations and schemas below; see README.md for login, uploads, CORS, and setup.</p>
+</aside>
+<div id="swagger-ui"></div>
+<noscript>Enable JavaScript to view Swagger UI. The complete contract is also available in openapi.json.</noscript>
+<script type="application/json" id="openapi-spec">{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Early Childhood Montessori & Academy API",
+    "version": "1.0.0-repository-17fe242",
+    "description": "Swagger documentation derived from Meiyang07/early_childhood at commit 17fe242d711f00402a20e0e5f2cad3f4a182c2ea. This documents the verified GitHub backend revision, not the later ZIP frontend. Route spellings (including addmission/adimission) and authorization reflect the implementation exactly. List endpoints can return drafts/pending records; apply filters explicitly. All examples are synthetic. JSON/urlencoded bodies are limited to 1 MiB; image uploads default to 5 MiB. Global rate limits default to 300 requests per 15 minutes and can be configured."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local API; change to the actual configured host/port."
+    },
+    {
+      "url": "http://127.0.0.1:3000",
+      "description": "Loopback API; keep the browser hostname consistent for cookies."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Authentication"
+    },
+    {
+      "name": "Staff"
+    },
+    {
+      "name": "Admissions"
+    },
+    {
+      "name": "Testimonials"
+    },
+    {
+      "name": "Programs"
+    },
+    {
+      "name": "Gallery"
+    },
+    {
+      "name": "Events"
+    },
+    {
+      "name": "Blog"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Check API health",
+        "operationId": "getHealth",
+        "description": "Does not check MongoDB or Cloudinary health; reports process uptime and environment.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/auth/admin-login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Log in and receive authentication cookies",
+        "operationId": "adminLogin",
+        "description": "Finds a non-deleted staff account and verifies its password. Despite the endpoint name, this revision does not check the ADMIN role or staff Active status during login. Tokens are returned in HTTP-only cookies, not JSON or an Authorization header.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Two Set-Cookie response headers set access_token (15-minute maxAge) and refresh_token (7-day maxAge), HttpOnly, SameSite=Lax, Path=/; Secure and Domain depend on configuration. JWT expiry depends on token TTL configuration.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "email": "admin@example.com",
+                "password": "ReplaceWithYourOwnPassword"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Read the current staff session",
+        "operationId": "getCurrentSession",
+        "description": "Loads the current staff profile from MongoDB. A deleted or missing account is rejected.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-access": "Authenticated"
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Refresh both session cookies",
+        "operationId": "refreshSession",
+        "description": "Uses refresh_token only. Reissues both cookies; no request body is required.",
+        "security": [
+          {
+            "refreshCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionMessage"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Two Set-Cookie response headers set access_token (15-minute maxAge) and refresh_token (7-day maxAge), HttpOnly, SameSite=Lax, Path=/; Secure and Domain depend on configuration. JWT expiry depends on token TTL configuration.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-access": "Authenticated"
+      }
+    },
+    "/api/auth/admin-logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Log out and clear both cookies",
+        "operationId": "adminLogout",
+        "description": "Requires a valid access_token before clearing access_token and refresh_token cookies.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionMessage"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Expires both authentication cookies using the configured cookie options.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-access": "Authenticated"
+      }
+    },
+    "/api/staff/": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Create a staff account with an image",
+        "operationId": "createStaff",
+        "description": "Uploads the image to Cloudinary and hashes the password. Role is a free-form string; use ADMIN, TEACHER, or OPERATOR consistently. Omitted status defaults to Active. Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request or missing image. Upload middleware can return a plain message object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UploadError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate email or admission application.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStaff"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/staff/staff-all": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "List staff and global role counts",
+        "operationId": "listStaff",
+        "description": "Public and not paginated. Excludes passwordHash and deletedAt from list results. Counts include all non-deleted staff and ignore search, status, and role filters.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Searches fullName, email, about and role."
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "All means no role filter. Admins/Teachers/Operators map to ADMIN/TEACHER/OPERATOR; other values are matched case-insensitively."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "Active",
+                "Inactive"
+              ]
+            }
+          }
+        ],
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/addmission/create-adimission": {
+      "post": {
+        "tags": [
+          "Admissions"
+        ],
+        "summary": "Submit an admission application",
+        "operationId": "createAdmission",
+        "description": "The addmission/adimission spellings are intentional copies of the registered route. This is nested JSON, not a multipart upload. Duplicate detection uses child fullName, dateOfBirth, and guardian email. Status defaults to Pending. Send additionalInfo explicitly to avoid the validator's placeholder defaults.",
+        "security": [],
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdmissionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate email or admission application.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdmissionRequest"
+              },
+              "example": {
+                "childInfo": {
+                  "fullName": "Example Child",
+                  "dateOfBirth": "2022-06-15",
+                  "gender": "Other",
+                  "applyingForProgram": "Nursery"
+                },
+                "guardianInfo": {
+                  "fullName": "Example Guardian",
+                  "phoneNumber": "9800000000",
+                  "email": "guardian@example.com",
+                  "homeAddress": "Example address, Pokhara"
+                },
+                "additionalInfo": {
+                  "previousSchool": "",
+                  "medicalConditions": "None",
+                  "referralSource": "School website"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/addmission/all-adimission": {
+      "get": {
+        "tags": [
+          "Admissions"
+        ],
+        "summary": "List applications and global status counts",
+        "operationId": "listAdmissions",
+        "description": "Not paginated. Sorts by submittedAt descending. Counts ignore search, status and program filters. Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdmissionListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Searches child name, guardian name, email, or phone."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "Pending",
+                "Reviewed",
+                "Accepted",
+                "Rejected",
+                "Waitlisted"
+              ],
+              "default": "All"
+            }
+          },
+          {
+            "name": "program",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "Playgroup",
+                "Nursery",
+                "Kindergarten",
+                "Primary"
+              ],
+              "default": "All"
+            }
+          }
+        ],
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/addmission/application/delete/{id}": {
+      "delete": {
+        "tags": [
+          "Admissions"
+        ],
+        "summary": "Delete an admission application",
+        "operationId": "deleteAdmission",
+        "description": "The registered route requires authentication but does not apply requireRole(ADMIN). Permanently removes the matching application.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdmissionDeleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request or missing image. Upload middleware can return a plain message object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UploadError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Use a 24-character MongoDB ObjectId. This route has no ID validation middleware; a malformed non-empty ID may cause a 500 response."
+          }
+        ],
+        "x-implementation-access": "Authenticated"
+      }
+    },
+    "/api/testimonial/testimonial-create": {
+      "post": {
+        "tags": [
+          "Testimonials"
+        ],
+        "summary": "Create a testimonial awaiting moderation",
+        "operationId": "createTestimonial",
+        "description": "Always creates status=pending. consentToPublish is stored independently of moderation status. Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestimonialResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestimonialRequest"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/testimonial/list-testimonial": {
+      "get": {
+        "tags": [
+          "Testimonials"
+        ],
+        "summary": "List testimonials with filters and pagination",
+        "operationId": "listTestimonials",
+        "description": "Public. The default All status includes pending and rejected testimonials; consentToPublish is not used as a filter in this revision. Sorts newest first.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestimonialListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive text search; matching fields vary by operation."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "pending",
+                "approved",
+                "rejected"
+              ],
+              "default": "All"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "One-based page number."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Records per page."
+          }
+        ],
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/testimonial/update/{id}": {
+      "patch": {
+        "tags": [
+          "Testimonials"
+        ],
+        "summary": "Update testimonial content",
+        "operationId": "updateTestimonial",
+        "description": " Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestimonialResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestimonialUpdate"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/testimonial/testimonials/{id}/status": {
+      "patch": {
+        "tags": [
+          "Testimonials"
+        ],
+        "summary": "Approve, reject, or reset testimonial status",
+        "operationId": "updateTestimonialStatus",
+        "description": "Updates status only; this revision does not require consentToPublish=true before approving. Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestimonialResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestimonialStatusUpdate"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/testimonial/delete/{id}": {
+      "delete": {
+        "tags": [
+          "Testimonials"
+        ],
+        "summary": "Delete a testimonial",
+        "operationId": "deleteTestimonial",
+        "description": " Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestimonialDeleteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/programs/list-program": {
+      "get": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "List programs",
+        "operationId": "listPrograms",
+        "description": "Public. Default All includes draft programs. Searches name/description and sorts newest first.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive text search; matching fields vary by operation."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "published",
+                "draft"
+              ],
+              "default": "All"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "One-based page number."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Records per page."
+          }
+        ],
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/programs/create-program": {
+      "post": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "Create a program",
+        "operationId": "createProgram",
+        "description": "This revision registers this write route without requireAuth or requireRole. It is documented as public, matching the code; no authorization changes are made by this documentation.",
+        "security": [],
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramRequest"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/programs/update/{id}": {
+      "patch": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "Update a program",
+        "operationId": "updateProgram",
+        "description": "This revision registers this write route without requireAuth or requireRole. It is documented as public, matching the code; no authorization changes are made by this documentation.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramUpdate"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/programs/{id}": {
+      "delete": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "Delete a program",
+        "operationId": "deleteProgram",
+        "description": "This revision registers this delete route without authentication or role middleware. Documented as implemented.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageSuccess"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/photo/list-photo": {
+      "get": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "List gallery photos",
+        "operationId": "listPhotos",
+        "description": "Public. Default All includes drafts. Searches title/imageDescription and sorts newest first.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive text search; matching fields vary by operation."
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "classroom",
+                "activities",
+                "outdoors",
+                "graduation"
+              ],
+              "default": "All"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "draft",
+                "published"
+              ],
+              "default": "All"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "One-based page number."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Records per page."
+          }
+        ],
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/photo/create-photo": {
+      "post": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Upload a gallery photo",
+        "operationId": "createPhoto",
+        "description": "Uploads a single image field plus metadata. JSON bodies cannot carry the file. Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request or missing image. Upload middleware can return a plain message object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UploadError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoRequest"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/photo/single-photo/{id}": {
+      "get": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Read one gallery photo",
+        "operationId": "getPhoto",
+        "description": "Public. Looks up by ID without restricting status to published.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/photo/update/{id}": {
+      "patch": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Update gallery-photo metadata",
+        "operationId": "updatePhoto",
+        "description": "JSON metadata only; use the image-replacement route for file changes. Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoUpdate"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/photo/replace/{id}/image": {
+      "patch": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Replace a gallery image",
+        "operationId": "replacePhotoImage",
+        "description": " Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request or missing image. Upload middleware can return a plain message object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UploadError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageReplacement"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/photo/delete/{id}": {
+      "delete": {
+        "tags": [
+          "Gallery"
+        ],
+        "summary": "Delete a gallery photo",
+        "operationId": "deletePhoto",
+        "description": "Deletes the database record and attempts to delete its Cloudinary image. Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/events/list-event": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "List events",
+        "operationId": "listEvents",
+        "description": "Public; defaults include drafts. Searches title, details and location.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive text search; matching fields vary by operation."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "draft",
+                "published"
+              ],
+              "default": "All"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Inclusive lower date bound. when=upcoming replaces it with server time."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Inclusive upper date bound."
+          },
+          {
+            "name": "when",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "upcoming",
+                "past"
+              ],
+              "default": "All"
+            },
+            "description": "Upcoming uses eventDate >= server time; past uses eventDate \u003c server time. Sorts upcoming soonest first, past latest first, otherwise newest created first."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "One-based page number."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Records per page."
+          }
+        ],
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/events/create-event": {
+      "post": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Create an event",
+        "operationId": "createEvent",
+        "description": " Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventRequest"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/events/single-event/{id}": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Read one event",
+        "operationId": "getEvent",
+        "description": "Public. Does not restrict status to published.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/events/update/{id}": {
+      "patch": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Update an event",
+        "operationId": "updateEvent",
+        "description": " Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventUpdate"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/events/delete/{id}": {
+      "delete": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Delete an event",
+        "operationId": "deleteEvent",
+        "description": " Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/blog/list-blog": {
+      "get": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "List blog posts",
+        "operationId": "listBlogs",
+        "description": "Public; defaults include drafts. Searches title, shortIntroduction, article and author. Sorts newest postDate first.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive text search; matching fields vary by operation."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "draft",
+                "published"
+              ],
+              "default": "All"
+            }
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Used as an anchored, case-insensitive regular expression in this revision."
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Inclusive lower postDate bound."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Inclusive upper postDate bound."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "One-based page number."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Records per page."
+          }
+        ],
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/blog/create-blog": {
+      "post": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Upload a blog post and cover image",
+        "operationId": "createBlog",
+        "description": " Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlogResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request or missing image. Upload middleware can return a plain message object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UploadError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/BlogRequest"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/blog/single-blog/{id}": {
+      "get": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Read one blog post",
+        "operationId": "getBlog",
+        "description": "Public. Does not restrict status to published.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlogResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "x-implementation-access": "Public"
+      }
+    },
+    "/api/blog/update/{id}": {
+      "patch": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Update blog-post metadata",
+        "operationId": "updateBlog",
+        "description": "JSON only; use the image-replacement route for file changes. Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlogResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlogUpdate"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/blog/replace/{id}/image": {
+      "patch": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Replace a blog cover image",
+        "operationId": "replaceBlogImage",
+        "description": "The source route runs upload middleware before authentication. Both upload and authentication errors are documented; the middleware order is not changed here. Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlogResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request or missing image. Upload middleware can return a plain message object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UploadError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageReplacement"
+              }
+            }
+          }
+        },
+        "x-implementation-access": "ADMIN"
+      }
+    },
+    "/api/blog/delete/{id}": {
+      "delete": {
+        "tags": [
+          "Blog"
+        ],
+        "summary": "Delete a blog post",
+        "operationId": "deleteBlog",
+        "description": "Deletes the database record and attempts to delete its Cloudinary image. Requires the exact ADMIN role.",
+        "security": [
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired authentication cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated role is not ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found; controller and middleware use different error envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body, query, or path validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "path": "title",
+                        "message": "Title must be at least 2 characters"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Global request rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "message": "Too many requests"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server, database, or upstream error. Production hides internal details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId."
+          }
+        ],
+        "x-implementation-access": "ADMIN"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ObjectId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "example": "507f1f77bcf86cd799439011",
+        "readOnly": true
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "hasPrevPage": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "total",
+          "page",
+          "limit",
+          "totalPages",
+          "hasNextPage",
+          "hasPrevPage"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "message"
+                  ]
+                }
+              },
+              "stack": {
+                "type": "string",
+                "description": "Returned only outside production."
+              }
+            },
+            "required": [
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "error"
+        ]
+      },
+      "MessageError": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
+      "UploadError": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Upload error: File too large"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "admin@example.com",
+            "format": "email",
+            "description": "Trimmed; login lookup converts to lowercase."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 200,
+            "format": "password",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "additionalProperties": false
+      },
+      "SessionUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "example": "ADMIN"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Active",
+              "Inactive"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "username",
+          "role"
+        ]
+      },
+      "SessionResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "user": {
+                "$ref": "#/components/schemas/SessionUser"
+              }
+            },
+            "required": [
+              "user"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "SessionMessage": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "env": {
+            "type": "string",
+            "example": "development"
+          },
+          "uptime": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Process uptime in seconds."
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z"
+          }
+        },
+        "required": [
+          "status",
+          "env",
+          "uptime",
+          "timestamp"
+        ]
+      },
+      "CreateStaff": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 160,
+            "example": "Example Educator"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "educator@example.com",
+            "format": "email",
+            "description": "Trimmed and lowercased."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 200,
+            "format": "password",
+            "writeOnly": true
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "TEACHER",
+            "description": "Free-form, case-sensitive role string. Protected ADMIN routes require the exact value ADMIN; there is no role enum in this schema."
+          },
+          "about": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "example": "Montessori educator and classroom guide."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Active",
+              "Inactive"
+            ]
+          },
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "description": "Required image; jpeg, jpg, png, webp or gif MIME type. Default size limit 5 MiB, configurable by UPLOAD_MAX_FILE_SIZE_MB."
+          }
+        },
+        "required": [
+          "fullName",
+          "email",
+          "password",
+          "role",
+          "about",
+          "image"
+        ],
+        "additionalProperties": false
+      },
+      "Staff": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 160,
+            "example": "Example Educator"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "educator@example.com",
+            "format": "email",
+            "description": "Trimmed and lowercased."
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "TEACHER",
+            "description": "Free-form, case-sensitive role string. Protected ADMIN routes require the exact value ADMIN; there is no role enum in this schema."
+          },
+          "about": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "example": "Montessori educator and classroom guide."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Active",
+              "Inactive"
+            ]
+          },
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.com/images/educator.jpg"
+          },
+          "imagePublicId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          },
+          "__v": {
+            "type": "integer",
+            "description": "May appear in lean list results."
+          }
+        },
+        "required": [
+          "_id",
+          "fullName",
+          "email",
+          "role",
+          "about",
+          "status",
+          "image"
+        ]
+      },
+      "StaffCounts": {
+        "type": "object",
+        "properties": {
+          "All": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Admins": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Teachers": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Operators": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "All",
+          "Admins",
+          "Teachers",
+          "Operators"
+        ]
+      },
+      "StaffListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "staff": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Staff"
+                }
+              },
+              "counts": {
+                "$ref": "#/components/schemas/StaffCounts"
+              }
+            },
+            "required": [
+              "staff",
+              "counts"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "AdmissionRequest": {
+        "type": "object",
+        "properties": {
+          "childInfo": {
+            "type": "object",
+            "properties": {
+              "fullName": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 100,
+                "example": "Example Child"
+              },
+              "dateOfBirth": {
+                "type": "string",
+                "format": "date",
+                "example": "2022-06-15",
+                "description": "Accepted as a date-coercible string; responses serialize it as an ISO timestamp."
+              },
+              "gender": {
+                "type": "string",
+                "enum": [
+                  "Male",
+                  "Female",
+                  "Other",
+                  "Prefer not to say"
+                ]
+              },
+              "applyingForProgram": {
+                "type": "string",
+                "enum": [
+                  "Playgroup",
+                  "Nursery",
+                  "Kindergarten",
+                  "Primary"
+                ]
+              }
+            },
+            "required": [
+              "fullName",
+              "dateOfBirth",
+              "gender",
+              "applyingForProgram"
+            ]
+          },
+          "guardianInfo": {
+            "type": "object",
+            "properties": {
+              "fullName": {
+                "type": "string",
+                "minLength": 2,
+                "example": "Example Guardian"
+              },
+              "phoneNumber": {
+                "type": "string",
+                "example": "9800000000",
+                "pattern": "^\\d{10}$",
+                "description": "Exactly 10 digits, sent as a string."
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "example": "guardian@example.com"
+              },
+              "homeAddress": {
+                "type": "string",
+                "minLength": 5,
+                "example": "Example address, Pokhara"
+              }
+            },
+            "required": [
+              "fullName",
+              "phoneNumber",
+              "email",
+              "homeAddress"
+            ]
+          },
+          "additionalInfo": {
+            "type": "object",
+            "properties": {
+              "previousSchool": {
+                "type": "string",
+                "default": ""
+              },
+              "medicalConditions": {
+                "type": "string",
+                "default": "None"
+              },
+              "referralSource": {
+                "type": "string",
+                "default": ""
+              }
+            },
+            "description": "Supply this object explicitly. If the entire object is omitted, this revision's validator substitutes example placeholder values rather than the individual field defaults.",
+            "default": {
+              "previousSchool": "exmple schoole",
+              "medicalConditions": "example medical",
+              "referralSource": "example refferal"
+            }
+          }
+        },
+        "required": [
+          "childInfo",
+          "guardianInfo"
+        ]
+      },
+      "Admission": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "id": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Mongoose virtual; may be absent from lean list responses."
+          },
+          "childInfo": {
+            "type": "object",
+            "properties": {
+              "fullName": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 100,
+                "example": "Example Child"
+              },
+              "dateOfBirth": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2026-12-15T04:15:00.000Z"
+              },
+              "gender": {
+                "type": "string",
+                "enum": [
+                  "Male",
+                  "Female",
+                  "Other",
+                  "Prefer not to say"
+                ]
+              },
+              "applyingForProgram": {
+                "type": "string",
+                "enum": [
+                  "Playgroup",
+                  "Nursery",
+                  "Kindergarten",
+                  "Primary"
+                ]
+              },
+              "age": {
+                "type": "integer",
+                "nullable": true,
+                "readOnly": true,
+                "description": "Virtual age; may be absent from lean list responses."
+              }
+            },
+            "required": [
+              "fullName",
+              "dateOfBirth",
+              "gender",
+              "applyingForProgram"
+            ]
+          },
+          "guardianInfo": {
+            "type": "object",
+            "properties": {
+              "fullName": {
+                "type": "string",
+                "minLength": 2,
+                "example": "Example Guardian"
+              },
+              "phoneNumber": {
+                "type": "string",
+                "example": "9800000000",
+                "pattern": "^\\d{10}$",
+                "description": "Exactly 10 digits, sent as a string."
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "example": "guardian@example.com"
+              },
+              "homeAddress": {
+                "type": "string",
+                "minLength": 5,
+                "example": "Example address, Pokhara"
+              }
+            },
+            "required": [
+              "fullName",
+              "phoneNumber",
+              "email",
+              "homeAddress"
+            ]
+          },
+          "additionalInfo": {
+            "type": "object",
+            "properties": {
+              "previousSchool": {
+                "type": "string",
+                "default": ""
+              },
+              "medicalConditions": {
+                "type": "string",
+                "default": "None"
+              },
+              "referralSource": {
+                "type": "string",
+                "default": ""
+              }
+            },
+            "description": "Supply this object explicitly. If the entire object is omitted, this revision's validator substitutes example placeholder values rather than the individual field defaults.",
+            "default": {
+              "previousSchool": "exmple schoole",
+              "medicalConditions": "example medical",
+              "referralSource": "example refferal"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Pending",
+              "Reviewed",
+              "Accepted",
+              "Rejected",
+              "Waitlisted"
+            ],
+            "default": "Pending"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          },
+          "__v": {
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "_id",
+          "childInfo",
+          "guardianInfo",
+          "status",
+          "submittedAt"
+        ]
+      },
+      "AdmissionCounts": {
+        "type": "object",
+        "properties": {
+          "All": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Pending": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Reviewed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Accepted": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Rejected": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "Waitlisted": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "AdmissionListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "applications": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Admission"
+                }
+              },
+              "counts": {
+                "$ref": "#/components/schemas/AdmissionCounts"
+              }
+            },
+            "required": [
+              "applications",
+              "counts"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "AdmissionDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "applicationId": {
+                "type": "string",
+                "example": "507f1f77bcf86cd799439011"
+              },
+              "deletedAt": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2026-12-15T04:15:00.000Z"
+              }
+            },
+            "required": [
+              "applicationId",
+              "deletedAt"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data"
+        ]
+      },
+      "TestimonialRequest": {
+        "type": "object",
+        "properties": {
+          "parentName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Example Parent"
+          },
+          "relationship": {
+            "type": "string",
+            "enum": [
+              "Father",
+              "Mother",
+              "Guardian",
+              "Other"
+            ]
+          },
+          "testimonial": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 1500,
+            "example": "The prepared classroom encourages our child's independence."
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 5
+          },
+          "consentToPublish": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "parentName",
+          "relationship",
+          "testimonial",
+          "rating",
+          "consentToPublish"
+        ]
+      },
+      "TestimonialUpdate": {
+        "type": "object",
+        "properties": {
+          "parentName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Example Parent"
+          },
+          "relationship": {
+            "type": "string",
+            "enum": [
+              "Father",
+              "Mother",
+              "Guardian",
+              "Other"
+            ]
+          },
+          "testimonial": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 1500,
+            "example": "The prepared classroom encourages our child's independence."
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 5
+          },
+          "consentToPublish": {
+            "type": "boolean"
+          }
+        },
+        "minProperties": 1,
+        "description": "At least one listed field is required after unknown keys are stripped."
+      },
+      "TestimonialStatusUpdate": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "Testimonial": {
+        "type": "object",
+        "properties": {
+          "parentName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Example Parent"
+          },
+          "relationship": {
+            "type": "string",
+            "enum": [
+              "Father",
+              "Mother",
+              "Guardian",
+              "Other"
+            ]
+          },
+          "testimonial": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 1500,
+            "example": "The prepared classroom encourages our child's independence."
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 5
+          },
+          "consentToPublish": {
+            "type": "boolean"
+          },
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "default": "pending"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "_id",
+          "parentName",
+          "relationship",
+          "testimonial",
+          "rating",
+          "consentToPublish",
+          "status"
+        ]
+      },
+      "ProgramRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120,
+            "example": "Nursery"
+          },
+          "ageRange": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "3–4 years"
+          },
+          "classDuration": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "9:00 AM – 12:00 PM"
+          },
+          "noOfTeachers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "example": 2
+          },
+          "noOfChildren": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "example": 20
+          },
+          "monthlyFee": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000000,
+            "example": 5000
+          },
+          "description": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000,
+            "example": "A prepared environment for hands-on exploration and early learning."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "published",
+              "draft"
+            ],
+            "default": "draft"
+          }
+        },
+        "required": [
+          "name",
+          "ageRange",
+          "classDuration",
+          "noOfTeachers",
+          "noOfChildren",
+          "monthlyFee",
+          "description"
+        ]
+      },
+      "ProgramUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120,
+            "example": "Nursery"
+          },
+          "ageRange": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "3–4 years"
+          },
+          "classDuration": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "9:00 AM – 12:00 PM"
+          },
+          "noOfTeachers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "example": 2
+          },
+          "noOfChildren": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "example": 20
+          },
+          "monthlyFee": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000000,
+            "example": 5000
+          },
+          "description": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000,
+            "example": "A prepared environment for hands-on exploration and early learning."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "published",
+              "draft"
+            ]
+          }
+        },
+        "minProperties": 1,
+        "description": "At least one listed field is required after unknown keys are stripped."
+      },
+      "Program": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120,
+            "example": "Nursery"
+          },
+          "ageRange": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "3–4 years"
+          },
+          "classDuration": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "9:00 AM – 12:00 PM"
+          },
+          "noOfTeachers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "example": 2
+          },
+          "noOfChildren": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "example": 20
+          },
+          "monthlyFee": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000000,
+            "example": 5000
+          },
+          "description": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000,
+            "example": "A prepared environment for hands-on exploration and early learning."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "published",
+              "draft"
+            ],
+            "default": "draft"
+          },
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "_id",
+          "name",
+          "ageRange",
+          "classDuration",
+          "noOfTeachers",
+          "noOfChildren",
+          "monthlyFee",
+          "description",
+          "status"
+        ]
+      },
+      "PhotoRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 150,
+            "example": "Classroom Discovery"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "classroom",
+              "activities",
+              "outdoors",
+              "graduation"
+            ]
+          },
+          "imageDescription": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 500,
+            "example": "Children exploring classroom learning materials."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "description": "Multipart field name must be image. Accepted MIME types: image/jpeg, image/jpg, image/png, image/webp, image/gif. Default limit: 5 MiB; configurable."
+          }
+        },
+        "required": [
+          "title",
+          "category",
+          "imageDescription",
+          "image"
+        ]
+      },
+      "PhotoUpdate": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 150,
+            "example": "Classroom Discovery"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "classroom",
+              "activities",
+              "outdoors",
+              "graduation"
+            ]
+          },
+          "imageDescription": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 500,
+            "example": "Children exploring classroom learning materials."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ]
+          }
+        },
+        "minProperties": 1,
+        "description": "Metadata only. At least one listed field is required after unknown keys are stripped."
+      },
+      "ImageReplacement": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "description": "Multipart field name must be image. Accepted MIME types: image/jpeg, image/jpg, image/png, image/webp, image/gif. Default limit: 5 MiB; configurable."
+          }
+        },
+        "required": [
+          "image"
+        ]
+      },
+      "Photo": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 150,
+            "example": "Classroom Discovery"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "classroom",
+              "activities",
+              "outdoors",
+              "graduation"
+            ]
+          },
+          "imageDescription": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 500,
+            "example": "Children exploring classroom learning materials."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.com/images/classroom.jpg"
+          },
+          "imagePublicId": {
+            "type": "string",
+            "example": "montessori/gallery/example"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "_id",
+          "title",
+          "category",
+          "imageDescription",
+          "status",
+          "image",
+          "imagePublicId"
+        ]
+      },
+      "EventRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 150,
+            "example": "Family Learning Day"
+          },
+          "eventDate": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z"
+          },
+          "time": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "10:00 AM"
+          },
+          "location": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 250,
+            "example": "School courtyard"
+          },
+          "details": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 3000,
+            "example": "Families join classroom activities and meet the teaching team."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          }
+        },
+        "required": [
+          "title",
+          "eventDate",
+          "time",
+          "location",
+          "details"
+        ]
+      },
+      "EventUpdate": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 150,
+            "example": "Family Learning Day"
+          },
+          "eventDate": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z"
+          },
+          "time": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "10:00 AM"
+          },
+          "location": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 250,
+            "example": "School courtyard"
+          },
+          "details": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 3000,
+            "example": "Families join classroom activities and meet the teaching team."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ]
+          }
+        },
+        "minProperties": 1,
+        "description": "At least one listed field is required after unknown keys are stripped."
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 150,
+            "example": "Family Learning Day"
+          },
+          "eventDate": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z"
+          },
+          "time": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "10:00 AM"
+          },
+          "location": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 250,
+            "example": "School courtyard"
+          },
+          "details": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 3000,
+            "example": "Families join classroom activities and meet the teaching team."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "_id",
+          "title",
+          "eventDate",
+          "time",
+          "location",
+          "details",
+          "status"
+        ]
+      },
+      "BlogRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200,
+            "example": "Learning Through Play"
+          },
+          "postDate": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "description": "Optional on create; defaults to server time when omitted."
+          },
+          "author": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Example Educator"
+          },
+          "shortIntroduction": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "example": "Simple ways to support independent learning at home."
+          },
+          "article": {
+            "type": "string",
+            "minLength": 50,
+            "maxLength": 50000,
+            "example": "Children learn through purposeful play, careful observation, and opportunities to explore their environment at their own pace."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "description": "Multipart field name must be image. Accepted MIME types: image/jpeg, image/jpg, image/png, image/webp, image/gif. Default limit: 5 MiB; configurable."
+          }
+        },
+        "required": [
+          "title",
+          "author",
+          "shortIntroduction",
+          "article",
+          "image"
+        ]
+      },
+      "BlogUpdate": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200,
+            "example": "Learning Through Play"
+          },
+          "postDate": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "description": "Optional on create; defaults to server time when omitted."
+          },
+          "author": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Example Educator"
+          },
+          "shortIntroduction": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "example": "Simple ways to support independent learning at home."
+          },
+          "article": {
+            "type": "string",
+            "minLength": 50,
+            "maxLength": 50000,
+            "example": "Children learn through purposeful play, careful observation, and opportunities to explore their environment at their own pace."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ]
+          }
+        },
+        "minProperties": 1,
+        "description": "Metadata only. At least one listed field is required after unknown keys are stripped."
+      },
+      "Blog": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200,
+            "example": "Learning Through Play"
+          },
+          "postDate": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "description": "Optional on create; defaults to server time when omitted."
+          },
+          "author": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Example Educator"
+          },
+          "shortIntroduction": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "example": "Simple ways to support independent learning at home."
+          },
+          "article": {
+            "type": "string",
+            "minLength": 50,
+            "maxLength": 50000,
+            "example": "Children learn through purposeful play, careful observation, and opportunities to explore their environment at their own pace."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "default": "draft"
+          },
+          "_id": {
+            "$ref": "#/components/schemas/ObjectId"
+          },
+          "blogImage": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.com/images/learning.jpg"
+          },
+          "blogImagePublicId": {
+            "type": "string",
+            "example": "montessori/blog/example"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-12-15T04:15:00.000Z",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "_id",
+          "title",
+          "postDate",
+          "author",
+          "shortIntroduction",
+          "article",
+          "status",
+          "blogImage",
+          "blogImagePublicId"
+        ]
+      },
+      "MessageSuccess": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
+      "StaffResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Staff"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "AdmissionResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Admission"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "TestimonialResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Testimonial"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "ProgramResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Program"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "PhotoResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Photo"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "EventResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Event"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "BlogResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Blog"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "TestimonialDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "$ref": "#/components/schemas/ObjectId"
+              }
+            },
+            "required": [
+              "_id"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data"
+        ]
+      },
+      "TestimonialListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Testimonial"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "search": {
+                "type": "string",
+                "nullable": true
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "search",
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "filters"
+        ]
+      },
+      "ProgramListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Program"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "search": {
+                "type": "string",
+                "nullable": true
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "search",
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "filters"
+        ]
+      },
+      "PhotoListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Photo"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "search": {
+                "type": "string",
+                "nullable": true
+              },
+              "status": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "search",
+              "status",
+              "category"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "filters"
+        ]
+      },
+      "EventListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "search": {
+                "type": "string",
+                "nullable": true
+              },
+              "status": {
+                "type": "string"
+              },
+              "when": {
+                "type": "string",
+                "enum": [
+                  "All",
+                  "upcoming",
+                  "past"
+                ]
+              },
+              "from": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2026-12-15T04:15:00.000Z",
+                "nullable": true
+              },
+              "to": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2026-12-15T04:15:00.000Z",
+                "nullable": true
+              }
+            },
+            "required": [
+              "search",
+              "status",
+              "when",
+              "from",
+              "to"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "filters"
+        ]
+      },
+      "BlogListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Blog"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "search": {
+                "type": "string",
+                "nullable": true
+              },
+              "status": {
+                "type": "string"
+              },
+              "author": {
+                "type": "string",
+                "nullable": true
+              },
+              "from": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2026-12-15T04:15:00.000Z",
+                "nullable": true
+              },
+              "to": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2026-12-15T04:15:00.000Z",
+                "nullable": true
+              }
+            },
+            "required": [
+              "search",
+              "status",
+              "author",
+              "from",
+              "to"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "filters"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "accessCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "access_token",
+        "description": "HTTP-only JWT cookie issued by login. Cookie maxAge is 15 minutes; JWT lifetime is separately configured. Browsers manage this cookie; manually entering it in Swagger Authorize does not bypass browser restrictions."
+      },
+      "refreshCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "refresh_token",
+        "description": "HTTP-only refresh JWT cookie issued by login; cookie maxAge is 7 days. Used only by the refresh operation."
+      }
+    }
+  },
+  "x-source-repository": "Meiyang07/early_childhood",
+  "x-source-commit": "17fe242d711f00402a20e0e5f2cad3f4a182c2ea"
+}
+</script>
+<script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" crossorigin="anonymous"></script>
+<script>
+"use strict";
+const spec = JSON.parse(document.getElementById("openapi-spec").textContent);
+const isServed = location.protocol === "http:" || location.protocol === "https:";
+const allowRequests = isServed && new URLSearchParams(location.search).get("try") === "1";
+document.getElementById("mode").textContent = allowRequests
+  ? "Request testing enabled. Requests target the API server selected below."
+  : "Read-only reference. Request execution is disabled.";
+if (!isServed) document.getElementById("testing-link").hidden = true;
+document.getElementById("download-spec").addEventListener("click", () => {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(spec, null, 2) + "\n"], { type: "application/json" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "montessori-openapi.json";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+if (typeof SwaggerUIBundle !== "function") {
+  document.getElementById("swagger-ui").textContent = "Swagger UI assets could not load. Internet access is required for the pinned Swagger UI CDN assets; open openapi.json directly or import it into Swagger Editor.";
+} else {
+  SwaggerUIBundle({
+    spec,
+    dom_id: "#swagger-ui",
+    deepLinking: true,
+    displayRequestDuration: true,
+    docExpansion: "list",
+    defaultModelsExpandDepth: 1,
+    filter: true,
+    validatorUrl: null,
+    queryConfigEnabled: false,
+    persistAuthorization: false,
+    withCredentials: true,
+    supportedSubmitMethods: allowRequests ? ["get", "post", "patch", "delete"] : [],
+    tryItOutEnabled: false
+  });
+}
+</script>
+</body>
+</html>
